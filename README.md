@@ -1,135 +1,161 @@
-# Signify (Deaflix) - ASL-First Education Chrome Extension
+# Deaflix - ASL-First Accessibility Layer
 
-**CS Girlies November Hackathon - Make Learning Cool Again!**
+Chrome extension that enhances YouTube captions and provides ASL (American Sign Language) support through an intelligent overlay system.
 
-## Project Overview
+## Features
 
-**Signify** (formerly Deaflix) is a Chrome extension designed to make educational video content more accessible for the Deaf and hard-of-hearing community. The extension enhances video captions and provides ASL (American Sign Language) support through an intelligent overlay system.
-
-### Key Features
-
-1. **Caption Enhancement**: 
-   - Extracts existing captions from video platforms (YouTube, etc.)
-   - Sends captions to AI backend for cleaning and enhancement
-   - Displays improved, high-contrast captions in a customizable overlay
-
-2. **ASL Support**:
-   - Toggleable ASL video window with human-like avatar
-   - Displays real ASL sign videos synchronized with video captions
-   - Supports Kaggle ASL dataset, OpenASL, and other ASL video sources
-   - Automatic word-to-video mapping for seamless translation
-
-3. **User-Friendly Interface**:
-   - Simple popup controls
-   - Real-time caption overlay
-   - Customizable display settings
-
-## Tech Stack
-
-### Frontend (Chrome Extension)
-- **Manifest V3** - Modern Chrome extension architecture
-- **Vanilla JavaScript** - No framework dependencies for lightweight extension
-- **CSS3** - High-contrast, accessible styling
-- **Chrome APIs**: 
-  - `chrome.tabs` - Tab management
-  - `chrome.storage` - Settings persistence
-  - `chrome.runtime` - Message passing
-
-### Backend
-- **Node.js + Express** - RESTful API server
-- **Python (Alternative)** - For AI/ML caption processing
-- **OpenAI API / GPT-4** - Caption enhancement and cleaning
-- **Sign Language Datasets**:
-  - SignLLM (for ASL video generation)
-  - Kaggle American Sign Language Dataset
-  - OpenASL Dataset
-
-### Data Processing
-- **YouTube Data API** - Caption extraction
-- **Web Speech API** - Fallback caption generation
-- **Video.js / Plyr** - Video player integration (if needed)
+- **Real-time Caption Extraction**: Extracts captions from YouTube videos using MutationObserver
+- **Caption Enhancement**: Sends captions to backend for cleaning and enhancement
+- **High-Contrast Overlay**: Displays enhanced captions in a customizable overlay
+- **ASL Avatar Window**: Toggleable ASL video window that plays sign language videos sequentially
+- **Background Proxy**: Uses service worker to proxy HTTP requests (avoids mixed content errors)
 
 ## Project Structure
 
 ```
-signify/
-├── extension/          # Chrome extension files
+deaflix/
+├── extension/
 │   ├── manifest.json
 │   ├── popup.html
 │   ├── popup.js
 │   ├── popup.css
-│   ├── content.js      # Injected into video pages
-│   ├── background.js   # Service worker
+│   ├── content.js
+│   ├── background.js
 │   ├── styles/
 │   │   └── overlay.css
 │   └── icons/
-├── backend/            # API server
+│       ├── icon16.png
+│       ├── icon48.png
+│       └── icon128.png
+├── backend/
 │   ├── server.js
 │   ├── package.json
-│   ├── routes/
-│   │   ├── captions.js
-│   │   └── asl.js
-│   └── utils/
-│       └── captionProcessor.js
+│   └── data/
+│       ├── asl_dataset/
+│       │   ├── hello/
+│       │   │   └── hello.mp4
+│       │   ├── world/
+│       │   │   └── world.mp4
+│       │   └── ...
+│       └── mapping.json
 └── README.md
 ```
 
-## Installation & Setup
+## Installation
 
 ### Chrome Extension
+
 1. Open Chrome and navigate to `chrome://extensions/`
 2. Enable "Developer mode"
 3. Click "Load unpacked"
 4. Select the `extension/` folder
 
 ### Backend Server
+
 ```bash
 cd backend
 npm install
 npm start
 ```
 
-### ASL Dataset Setup (Optional but Recommended)
+The server will run on `http://localhost:3000`
 
-To use real human ASL sign videos instead of demo videos:
+## ASL Dataset Setup
 
-1. **Download Kaggle ASL Dataset**:
-   - Visit: https://www.kaggle.com/datasets/ayuraj/asl-dataset
-   - Download and extract to `backend/data/asl-dataset/`
+1. Create folders for each word in `backend/data/asl_dataset/`
+2. Place video files (`.mp4`) in each folder
+3. Update `backend/data/mapping.json` with word-to-path mappings:
 
-2. **Process the Dataset**:
-   ```bash
-   cd backend
-   node scripts/process-asl-dataset.js
-   ```
-
-3. **Restart Backend**:
-   ```bash
-   npm start
-   ```
-
-For detailed instructions, see [backend/ASL_DATASET_SETUP.md](backend/ASL_DATASET_SETUP.md)
+```json
+{
+  "hello": "hello/hello.mp4",
+  "world": "world/world.mp4"
+}
+```
 
 ## Usage
 
-1. Navigate to a supported video platform (YouTube, etc.)
+1. Navigate to a YouTube video with captions enabled
 2. Click the Deaflix extension icon
 3. Toggle "Enhanced Captions" to enable caption overlay
-4. Toggle "ASL Window" to show ASL video support
-5. Captions are automatically extracted and enhanced
+4. Toggle "ASL Avatar" to show ASL video window
+5. Captions are automatically extracted and ASL videos play sequentially
 
-## Demo Flow
+## API Endpoints
 
-See `DEMO.md` for detailed demo instructions for judges.
+### `POST /api/asl/video-map`
 
-## Future Enhancements
+Maps words to ASL video URLs.
 
-- Real-time ASL video generation using SignLLM
-- Support for multiple video platforms
-- Customizable caption styling
-- ASL vocabulary learning mode
-- Community-contributed ASL clips
+**Request:**
+```json
+{
+  "words": ["hello", "world"]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "videos": [
+    "http://localhost:3000/asl/hello/hello.mp4",
+    "http://localhost:3000/asl/world/world.mp4"
+  ],
+  "wordsFound": 2,
+  "wordsTotal": 2
+}
+```
+
+### `POST /api/captions/enhance`
+
+Enhances and cleans captions.
+
+**Request:**
+```json
+{
+  "captions": ["[Music] Hello, welcome to this video."]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "originalCount": 1,
+  "enhancedCount": 1,
+  "enhancedCaptions": ["Hello, welcome to this video."]
+}
+```
+
+### `GET /asl/*`
+
+Serves static ASL video files from `backend/data/asl_dataset/`
+
+## Development
+
+### Extension Files
+
+- `content.js`: Main logic injected into YouTube pages
+  - Extracts captions via MutationObserver
+  - Manages caption overlay and ASL window
+  - Communicates with backend via background worker
+
+- `background.js`: Service worker
+  - Proxies API requests to backend
+  - Converts media files to data URLs (avoids mixed content)
+
+- `popup.js`: UI controls
+  - Toggles for Enhanced Captions and ASL Avatar
+  - Sends messages to content script
+
+### Backend Files
+
+- `server.js`: Express server
+  - `/api/asl/video-map`: Maps words to video URLs
+  - `/api/captions/enhance`: Cleans captions
+  - `/asl/*`: Serves static files
 
 ## License
 
-MIT License - Hackathon Project
+MIT

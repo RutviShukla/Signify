@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Deaflix - ASL-First Education",
+  "name": "Deaflix",
   "version": "1.0.0",
-  "description": "Enhance educational video captions with AI-powered cleaning and ASL support",
+  "description": "ASL-First Accessibility Layer for YouTube",
   "permissions": [
     "activeTab",
     "storage",
@@ -13,12 +13,7 @@
     "http://localhost/*"
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    }
+    "default_popup": "popup.html"
   },
   "background": {
     "service_worker": "background.js"
@@ -39,12 +34,5 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": ["styles/*"],
-      "matches": ["<all_urls>"]
-    }
-  ]
+  }
 }
-
