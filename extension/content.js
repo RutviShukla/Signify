@@ -10,7 +10,10 @@
   let videoElement = null;
   let captionObserver = null;
   let currentCaptionText = '';
-  let aslVideoCache = new Map(); // Cache ASL videos by phrase
+  let aslVideoElement = null;
+  let aslVideoQueue = [];
+  let currentVideoIndex = 0;
+  let isPlayingSequence = false;
 
   // Initialize
   const init = async () => {
@@ -193,10 +196,10 @@
         captionOverlay.style.display = 'block';
       }
 
-      // Update ASL video if enabled
+      // Update ASL avatar if enabled
       if (aslEnabled && aslWindow) {
-        console.log('[Deaflix] ASL enabled, updating video...');
-        updateASLVideo(captionText);
+        console.log('[Deaflix] ASL enabled, updating avatar...');
+        updateASLAvatar(captionText);
       } else if (aslEnabled && !aslWindow) {
         console.log('[Deaflix] ASL enabled but window not created yet');
       }
@@ -289,146 +292,325 @@
     }
   };
 
-  // Create ASL window
+  // Create ASL window with video element for OpenASL videos
   const createASLWindow = () => {
-    console.log('[Deaflix] Creating ASL window...');
+    console.log('[Deaflix] Creating ASL video window...');
     
-    if (aslWindow) {
-      aslWindow.remove();
+    try {
+      if (aslWindow) {
+        // Stop video if window exists
+        if (aslVideoElement) {
+          aslVideoElement.pause();
+          aslVideoElement.src = '';
+        }
+        aslWindow.remove();
+        aslWindow = null;
+      }
+
+      aslWindow = document.createElement('div');
+      aslWindow.id = 'deaflix-asl-window';
+      aslWindow.className = 'deaflix-asl-window';
+      
+      // Ensure window is visible
+      aslWindow.style.display = 'block';
+      aslWindow.style.visibility = 'visible';
+      
+      // Create video element for OpenASL video clips
+      aslVideoElement = document.createElement('video');
+      aslVideoElement.id = 'deaflix-asl-video';
+      aslVideoElement.controls = false;
+      aslVideoElement.muted = true;
+      aslVideoElement.autoplay = true;
+      aslVideoElement.playsInline = true;
+      aslVideoElement.style.width = '100%';
+      aslVideoElement.style.height = '100%';
+      aslVideoElement.style.objectFit = 'cover';
+      aslVideoElement.style.background = '#1a1a1a';
+      
+      // Event listeners for video
+      aslVideoElement.addEventListener('loadstart', () => {
+        console.log('[Deaflix] ASL video loadstart');
+      });
+      
+      aslVideoElement.addEventListener('loadeddata', () => {
+        console.log('[Deaflix] ASL video loaded');
+        const fallback = aslWindow.querySelector('#deaflix-asl-fallback');
+        if (fallback) {
+          fallback.style.display = 'none';
+        }
+      });
+      
+      aslVideoElement.addEventListener('ended', () => {
+        console.log('[Deaflix] ASL video ended, playing next in sequence');
+        playNextVideoInSequence();
+      });
+      
+      aslVideoElement.addEventListener('error', (e) => {
+        console.error('[Deaflix] ASL video error:', e);
+        const fallback = aslWindow.querySelector('#deaflix-asl-fallback');
+        if (fallback) {
+          fallback.textContent = 'Video unavailable';
+          fallback.style.display = 'flex';
+        }
+        // Try next video in sequence
+        playNextVideoInSequence();
+      });
+      
+      // Add fallback message div (shown when no captions)
+      const fallbackMsg = document.createElement('div');
+      fallbackMsg.id = 'deaflix-asl-fallback';
+      fallbackMsg.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #667eea;
+        font-size: 16px;
+        text-align: center;
+        z-index: 2;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        background: rgba(26, 26, 26, 0.9);
+        padding: 20px;
+        border-radius: 8px;
+      `;
+      fallbackMsg.innerHTML = `
+        <div style="font-size: 32px; margin-bottom: 10px;">👋</div>
+        <div>Waiting for captions...</div>
+        <div style="font-size: 12px; color: #999; margin-top: 5px;">OpenASL Avatar Ready</div>
+      `;
+
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'deaflix-close-btn';
+      closeBtn.textContent = '×';
+      closeBtn.onclick = () => toggleASL(false);
+
+      aslWindow.appendChild(aslVideoElement);
+      aslWindow.appendChild(fallbackMsg);
+      aslWindow.appendChild(closeBtn);
+
+      document.body.appendChild(aslWindow);
+      console.log('[Deaflix] ASL video window created and appended to body');
+      console.log('[Deaflix] Window element:', aslWindow);
+      console.log('[Deaflix] Window visible:', window.getComputedStyle(aslWindow).display);
+      
+      // Verify it's in the DOM
+      const checkWindow = document.getElementById('deaflix-asl-window');
+      if (!checkWindow) {
+        console.error('[Deaflix] ERROR: Window was not added to DOM!');
+        throw new Error('Failed to append window to body');
+      }
+      
+      // Show fallback initially
+      fallbackMsg.style.display = 'flex';
+      
+      // If we already have caption text, update video
+      if (currentCaptionText) {
+        console.log('[Deaflix] Current caption exists, updating video:', currentCaptionText);
+        updateASLAvatar(currentCaptionText);
+      } else {
+        console.log('[Deaflix] No current caption text, will update when captions appear');
+      }
+    } catch (error) {
+      console.error('[Deaflix] ERROR creating ASL window:', error);
+      console.error('[Deaflix] Error stack:', error.stack);
+      aslWindow = null;
+      aslVideoElement = null;
     }
-
-    aslWindow = document.createElement('div');
-    aslWindow.id = 'deaflix-asl-window';
-    aslWindow.className = 'deaflix-asl-window';
-    
-    const aslVideo = document.createElement('video');
-    aslVideo.id = 'deaflix-asl-video';
-    aslVideo.controls = false;
-    aslVideo.muted = true;
-    aslVideo.loop = true;
-    aslVideo.style.width = '100%';
-    aslVideo.style.height = '100%';
-    aslVideo.style.objectFit = 'cover';
-    
-    // Add event listeners for debugging
-    aslVideo.addEventListener('loadstart', () => console.log('[Deaflix] ASL video loadstart'));
-    aslVideo.addEventListener('loadeddata', () => console.log('[Deaflix] ASL video loadeddata'));
-    aslVideo.addEventListener('error', (e) => {
-      console.error('[Deaflix] ASL video error:', e);
-      console.error('[Deaflix] Video src:', aslVideo.src);
-    });
-
-    // Set initial placeholder
-    aslVideo.src = 'https://via.placeholder.com/300x400/667eea/ffffff?text=ASL+Video';
-    console.log('[Deaflix] Set initial placeholder video');
-    
-    // If we already have caption text, try to load ASL video
-    if (currentCaptionText) {
-      console.log('[Deaflix] Current caption exists, updating ASL video:', currentCaptionText);
-      updateASLVideo(currentCaptionText);
-    } else {
-      console.log('[Deaflix] No current caption text, will update when captions appear');
-    }
-
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'deaflix-close-btn';
-    closeBtn.textContent = '×';
-    closeBtn.onclick = () => toggleASL(false);
-
-    aslWindow.appendChild(aslVideo);
-    aslWindow.appendChild(closeBtn);
-
-    document.body.appendChild(aslWindow);
-    console.log('[Deaflix] ASL window created and appended to body');
   };
 
-  // Update ASL video based on current caption text
-  const updateASLVideo = async (captionText) => {
-    console.log('[Deaflix] updateASLVideo called with:', captionText);
+  // Play next video in sequence
+  const playNextVideoInSequence = () => {
+    if (aslVideoQueue.length === 0) {
+      console.log('[Deaflix] No more videos in queue');
+      isPlayingSequence = false;
+      return;
+    }
+
+    if (currentVideoIndex >= aslVideoQueue.length) {
+      console.log('[Deaflix] Finished playing all videos in sequence');
+      aslVideoQueue = [];
+      currentVideoIndex = 0;
+      isPlayingSequence = false;
+      return;
+    }
+
+    if (!aslVideoElement || !aslWindow) {
+      console.log('[Deaflix] Video element not found');
+      return;
+    }
+
+    const nextVideoUrl = aslVideoQueue[currentVideoIndex];
+    console.log(`[Deaflix] Playing OpenASL video ${currentVideoIndex + 1}/${aslVideoQueue.length}:`, nextVideoUrl);
     
-    if (!aslWindow) {
-      console.log('[Deaflix] ASL window not found');
+    aslVideoElement.src = nextVideoUrl;
+    aslVideoElement.load();
+    
+    // Try to play if main video is playing
+    if (videoElement && !videoElement.paused) {
+      aslVideoElement.play().catch(err => {
+        console.error('[Deaflix] Error playing ASL video:', err);
+        // Try next video
+        currentVideoIndex++;
+        playNextVideoInSequence();
+      });
+    }
+    
+    currentVideoIndex++;
+    isPlayingSequence = true;
+  };
+
+  // Update ASL video based on current caption text (REAL-TIME using OpenASL)
+  const updateASLAvatar = async (captionText) => {
+    console.log('[Deaflix] updateASLAvatar called with:', captionText);
+    
+    if (!aslWindow || !aslVideoElement) {
+      console.log('[Deaflix] ASL window or video element not found');
       return;
     }
     
     if (!captionText) {
       console.log('[Deaflix] No caption text provided');
-      return;
-    }
-
-    const aslVideo = aslWindow.querySelector('#deaflix-asl-video');
-    if (!aslVideo) {
-      console.log('[Deaflix] ASL video element not found');
-      return;
-    }
-
-    // Extract key phrases from caption (simple approach - can be improved)
-    const phrases = extractKeyPhrases(captionText);
-    console.log('[Deaflix] Extracted phrases:', phrases);
-    
-    // Try to get ASL video for the first significant phrase
-    if (phrases.length > 0) {
-      const mainPhrase = phrases[0];
-      console.log('[Deaflix] Using main phrase:', mainPhrase);
-      
-      // Check cache first
-      if (aslVideoCache.has(mainPhrase)) {
-        console.log('[Deaflix] Using cached ASL video');
-        aslVideo.src = aslVideoCache.get(mainPhrase);
-        aslVideo.load(); // Force reload
-        return;
+      const fallback = aslWindow.querySelector('#deaflix-asl-fallback');
+      if (fallback) {
+        fallback.style.display = 'flex';
       }
+      return;
+    }
 
-      // Fetch from backend
-      console.log('[Deaflix] Fetching ASL video from backend...');
+    // Hide fallback message when we have captions
+    const fallback = aslWindow.querySelector('#deaflix-asl-fallback');
+    if (fallback) {
+      fallback.style.display = 'none';
+    }
+
+    // Extract words from caption
+    const words = extractSignWords(captionText);
+    console.log('[Deaflix] Extracted words for OpenASL lookup:', words);
+    
+    if (words.length > 0) {
+      // Send to backend to get OpenASL video URLs
+      // Use background script as proxy to avoid CORS issues (HTTPS->HTTP)
       try {
         const backendUrl = await getBackendUrl();
-        console.log('[Deaflix] Using backend URL:', backendUrl);
-        const response = await fetch(`${backendUrl}/api/asl/video`, {
+        console.log('[Deaflix] Fetching OpenASL videos from backend via proxy...');
+        
+        // Use background script to proxy the request
+        chrome.runtime.sendMessage({
+          action: 'proxyRequest',
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            phrase: mainPhrase,
+          path: '/api/asl/openasl',
+          body: {
+            text: captionText,
+            words: words,
             videoId: getVideoId()
-          })
-        });
-
-        console.log('[Deaflix] Backend response status:', response.status);
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log('[Deaflix] Backend response data:', data);
+          }
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('[Deaflix] Proxy error:', chrome.runtime.lastError);
+            if (fallback) {
+              fallback.textContent = 'Extension error';
+              fallback.style.display = 'flex';
+            }
+            return;
+          }
           
-          if (data.videoUrl) {
-            // Cache the video URL
-            aslVideoCache.set(mainPhrase, data.videoUrl);
-            console.log('[Deaflix] Setting ASL video src to:', data.videoUrl);
-            aslVideo.src = data.videoUrl;
-            aslVideo.load(); // Force reload
+          if (response && response.success) {
+            const data = response.data;
+            console.log('[Deaflix] ASL response:', data);
+            console.log('[Deaflix] Words being signed:', data.words);
+            console.log('[Deaflix] Videos found:', data.videos?.length || 0);
             
-            // Try to play if video is playing
-            if (videoElement && !videoElement.paused) {
-              aslVideo.play().catch(err => {
-                console.error('[Deaflix] Error playing ASL video:', err);
-              });
+            if (data.videos && Array.isArray(data.videos) && data.videos.length > 0) {
+              // Queue videos to play sequentially - each video represents a sign for a word
+              aslVideoQueue = data.videos;
+              currentVideoIndex = 0;
+              console.log(`[Deaflix] Queueing ${aslVideoQueue.length} ASL sign videos for words:`, data.words);
+              
+              // Show which words are being signed
+              if (data.wordMappings) {
+                console.log('[Deaflix] Word-to-video mappings:', data.wordMappings.map(m => `${m.word} -> ${m.videoUrl}`).join(', '));
+              }
+              
+              playNextVideoInSequence();
+            } else if (data.videoUrl) {
+              // Single video URL (fallback)
+              aslVideoQueue = [data.videoUrl];
+              currentVideoIndex = 0;
+              console.log('[Deaflix] Using single fallback video');
+              playNextVideoInSequence();
+            } else {
+              console.warn('[Deaflix] No videos in response');
+              if (fallback) {
+                fallback.innerHTML = `
+                  <div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>
+                  <div>No ASL videos found</div>
+                  <div style="font-size: 11px; color: #999; margin-top: 5px;">
+                    Words: ${data.words?.join(', ') || 'unknown'}<br/>
+                    ${data.message || 'Add words to aslVideoDatabase'}
+                  </div>
+                `;
+                fallback.style.display = 'flex';
+              }
             }
           } else {
-            console.warn('[Deaflix] No videoUrl in response');
+            console.error('[Deaflix] Proxy request failed:', response);
+            if (fallback) {
+              fallback.textContent = response?.error || 'Backend error';
+              fallback.style.display = 'flex';
+            }
           }
-        } else {
-          const errorText = await response.text();
-          console.error('[Deaflix] Backend error:', response.status, errorText);
-        }
+        });
+        
+        return; // Exit early since we're using async callback
       } catch (error) {
-        console.error('[Deaflix] Error fetching ASL video:', error);
+        const backendUrlUsed = await getBackendUrl();
+        console.error('[Deaflix] Error setting up proxy request:', error);
         console.error('[Deaflix] Error details:', error.message);
-        // Keep placeholder on error
+        console.error('[Deaflix] Backend URL was:', backendUrlUsed);
+        
+        if (fallback) {
+          let errorMessage = 'Connection error';
+          let errorDetails = 'Make sure backend is running';
+          
+          if (error.message.includes('CORS') || error.message.includes('blocked')) {
+            errorMessage = 'CORS error';
+            errorDetails = 'Backend CORS not configured. Check server.js';
+          } else if (error.message.includes('Failed to fetch')) {
+            errorMessage = 'Backend not reachable';
+            errorDetails = 'Start backend: cd backend && npm start';
+          }
+          
+          fallback.innerHTML = `
+            <div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>
+            <div>${errorMessage}</div>
+            <div style="font-size: 11px; color: #999; margin-top: 5px; max-width: 200px;">
+              ${errorDetails}<br/>
+              <code style="background: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 3px; font-size: 10px;">${backendUrlUsed}</code>
+            </div>
+          `;
+          fallback.style.display = 'flex';
+        }
       }
-    } else {
-      console.log('[Deaflix] No phrases extracted from caption');
     }
+  };
+
+  // Helper: Extract words from text (same as backend)
+  const extractSignWords = (text) => {
+    if (!text) return [];
+    
+    const cleaned = text.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .trim();
+    
+    const words = cleaned.split(/\s+/).filter(w => w.length > 0);
+    
+    const stopWords = new Set(['a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being']);
+    
+    return words.filter(w => !stopWords.has(w) || words.length <= 3);
   };
 
   // Extract key phrases from caption text
@@ -455,21 +637,15 @@
 
   // Play ASL video
   const playASLVideo = () => {
-    if (aslWindow) {
-      const aslVideo = aslWindow.querySelector('#deaflix-asl-video');
-      if (aslVideo) {
-        aslVideo.play().catch(console.error);
-      }
+    if (aslWindow && aslVideoElement) {
+      aslVideoElement.play().catch(console.error);
     }
   };
 
   // Pause ASL video
   const pauseASLVideo = () => {
-    if (aslWindow) {
-      const aslVideo = aslWindow.querySelector('#deaflix-asl-video');
-      if (aslVideo) {
-        aslVideo.pause();
-      }
+    if (aslWindow && aslVideoElement) {
+      aslVideoElement.pause();
     }
   };
 
@@ -500,9 +676,18 @@
 
   // Toggle ASL
   const toggleASL = (enabled) => {
+    console.log('[Deaflix] toggleASL called with:', enabled);
     aslEnabled = enabled;
     if (enabled) {
+      console.log('[Deaflix] Creating ASL window...');
       createASLWindow();
+      
+      // Verify window was created
+      if (!aslWindow) {
+        console.error('[Deaflix] ERROR: Window was not created!');
+        return;
+      }
+      
       // Start real-time caption monitoring for ASL
       if (videoElement) {
         startRealTimeCaptionExtraction();
@@ -511,9 +696,18 @@
         playASLVideo();
       }
     } else {
+      console.log('[Deaflix] Disabling ASL, removing window');
       if (aslWindow) {
+        // Stop video
+        if (aslVideoElement) {
+          aslVideoElement.pause();
+          aslVideoElement.src = '';
+        }
         aslWindow.remove();
         aslWindow = null;
+        aslVideoElement = null;
+        aslVideoQueue = [];
+        currentVideoIndex = 0;
       }
     }
   };

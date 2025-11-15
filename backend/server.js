@@ -1,23 +1,108 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// Middleware - CORS configuration to allow requests from extension
+// Note: Chrome blocks HTTPS->HTTP requests, so we allow all origins for extension proxy
+app.use(cors({
+  origin: true, // Allow all origins (extension will proxy the request)
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
-// Mock ASL video database (in production, this would connect to SignLLM/OpenASL)
+// Serve ASL videos/images statically from dataset directory
+// Try both folder name variations (asl-dataset or asl_dataset)
+const aslDatasetPathHyphen = path.join(__dirname, 'data', 'asl-dataset');
+const aslDatasetPathUnderscore = path.join(__dirname, 'data', 'asl_dataset');
+const aslDatasetPath = fs.existsSync(aslDatasetPathUnderscore) 
+  ? aslDatasetPathUnderscore 
+  : aslDatasetPathHyphen;
+
+if (fs.existsSync(aslDatasetPath)) {
+  app.use('/asl-videos', express.static(aslDatasetPath));
+  console.log(`[Backend] Serving ASL media from: ${aslDatasetPath}`);
+} else {
+  console.log(`[Backend] ASL dataset not found. Using fallback videos.`);
+  console.log(`[Backend] Expected location: ${aslDatasetPathHyphen} or ${aslDatasetPathUnderscore}`);
+}
+
+// Load ASL word-to-video mapping from processed dataset
+let aslDatasetMapping = {};
+const aslMappingPath = path.join(__dirname, 'data', 'asl-word-mapping.json');
+if (fs.existsSync(aslMappingPath)) {
+  try {
+    aslDatasetMapping = JSON.parse(fs.readFileSync(aslMappingPath, 'utf8'));
+    console.log(`[Backend] Loaded ASL dataset mapping with ${Object.keys(aslDatasetMapping).length} words`);
+  } catch (error) {
+    console.error('[Backend] Error loading ASL dataset mapping:', error.message);
+  }
+} else {
+  console.log(`[Backend] ASL word mapping not found. Run: node scripts/process-asl-dataset.js`);
+}
+
+// ASL video database - maps words to ASL sign videos
+// In production, these would be actual ASL sign videos from OpenASL or other datasets
+// For demo: Using different videos for each word so you can see the avatar "signing" different words
+// TODO: Replace with actual ASL sign language video URLs
 const aslVideoDatabase = {
-  'hello': 'https://example.com/asl/hello.mp4',
-  'thank you': 'https://example.com/asl/thankyou.mp4',
-  'please': 'https://example.com/asl/please.mp4',
-  'welcome': 'https://example.com/asl/welcome.mp4',
+  // Common words - each word should have its own unique ASL sign video
+  // For now using demo videos - replace with actual ASL videos
+  'hello': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+  'hi': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+  'thank': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+  'you': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  'welcome': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+  'please': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+  'yes': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+  'no': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+  'this': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+  'is': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+  'to': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+  'and': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4',
+  'video': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4',
+  'how': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+  'are': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+  'what': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  'where': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+  'when': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+  'why': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+  'who': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+  'can': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+  'will': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+  'would': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+  'should': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4',
+  'could': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4',
   // Add more mappings as needed
+  // NOTE: Replace these URLs with actual ASL sign language video URLs from OpenASL or other datasets
 };
+
+// Helper: Extract words from phrase and filter common stop words
+function extractSignWords(text) {
+  if (!text) return [];
+  
+  // Remove punctuation and convert to lowercase
+  const cleaned = text.toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .trim();
+  
+  // Split into words
+  const words = cleaned.split(/\s+/).filter(w => w.length > 0);
+  
+  // Filter out very common words that might not have distinct signs
+  // In ASL, these are often omitted or combined with other signs
+  const stopWords = new Set(['a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being']);
+  
+  // Return significant words (filter stop words, but keep some context)
+  return words.filter(w => !stopWords.has(w) || words.length <= 3);
+}
 
 // Routes
 
@@ -52,7 +137,211 @@ app.post('/api/captions/enhance', async (req, res) => {
   }
 });
 
-// Get ASL video for a phrase
+// Get OpenASL videos for text (NEW ENDPOINT - uses OpenASL dataset)
+app.post('/api/asl/openasl', async (req, res) => {
+  try {
+    const { text, words, videoId } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    // Extract words if not provided
+    const signWords = words || extractSignWords(text.toLowerCase().trim());
+    
+    console.log(`[Backend] Looking up OpenASL videos for: "${text}" (words: ${signWords.join(', ')})`);
+    
+    // TODO: In production, this would:
+    // 1. Load OpenASL dataset (data/openasl-v1.0.tsv)
+    // 2. Match words/phrases to video clips
+    // 3. Return video URLs or file paths
+    
+    // For now, return structure for OpenASL integration
+    // You'll need to:
+    // - Download OpenASL videos using: python prep/download.py --tsv data/openasl-v1.0.tsv --dest /path/to/videos
+    // - Process videos: python prep/crop_video.py --tsv data/openasl-v1.0.tsv --bbox data/bbox-v1.0.json --raw /path/to/videos --output /path/to/processed
+    // - Create a lookup index mapping text to video paths
+    
+    // Map each word to an ASL sign video or, for finger-spelling, to a sequence of letter images
+    // Priority: 1. ASL Dataset, 2. aslVideoDatabase, 3. Fallback: spell each letter
+    const videoMappings = signWords.map(word => {
+      const normalizedWord = word.toLowerCase().trim();
+      // Check for a word-level sign (video or image)
+      if (aslDatasetMapping[normalizedWord] && aslDatasetMapping[normalizedWord].length > 0) {
+        const entry = aslDatasetMapping[normalizedWord][0];
+        const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+        const url = entry.url.startsWith("http") ? entry.url : `${backendUrl}${entry.url}`;
+        return {
+          word: normalizedWord,
+          sequence: [url],
+          found: true,
+          source: 'asl-dataset-word'
+        };
+      }
+      // Check in fallback videos
+      if (aslVideoDatabase[normalizedWord]) {
+        return {
+          word: normalizedWord,
+          sequence: [aslVideoDatabase[normalizedWord]],
+          found: true,
+          source: 'demo-database'
+        };
+      }
+      // Spell word using letter images (finger-spelling)
+      const letters = normalizedWord.split("");
+      const letterUrls = letters.map(letter => {
+        // use only a-z / 0-9 for now
+        if (aslDatasetMapping[letter] && aslDatasetMapping[letter].length > 0) {
+          const entry = aslDatasetMapping[letter][0];
+          const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+          return entry.url.startsWith("http") ? entry.url : `${backendUrl}${entry.url}`;
+        }
+        return null;
+      }).filter(url => url !== null);
+      if (letterUrls.length > 0) {
+        return {
+          word: normalizedWord,
+          sequence: letterUrls,
+          found: true,
+          source: 'asl-fingerspell'
+        };
+      }
+      // No match at all
+      return null;
+    }).filter(v => v !== null);
+
+    // If we found any mapping(s), return those as a sequence per word
+    if (videoMappings.length > 0) {
+      const sources = [...new Set(videoMappings.map(v => v.source))];
+      // Flatten the sequences for visual playback
+      const playbackSequence = videoMappings.flatMap(v => v.sequence);
+      res.json({
+        success: true,
+        text,
+        words: signWords,
+        // 'videos': for backward compatibility; array with all gesture images in playback order
+        videos: playbackSequence,
+        // New: 'sequenceMappings': for each word, show its sequence (image URLs and source)
+        sequenceMappings: videoMappings,
+        source: sources,
+        videoId
+      });
+      return;
+    }
+    
+    // Fallback: Try to find partial matches or use demo video
+    // Check if any word variations exist in dataset
+    let partialMatches = [];
+    signWords.forEach(word => {
+      // Check for partial word matches (e.g., "thank" matches "thanks")
+      Object.keys(aslDatasetMapping).forEach(datasetWord => {
+        if (datasetWord.includes(word) || word.includes(datasetWord)) {
+          if (aslDatasetMapping[datasetWord] && aslDatasetMapping[datasetWord].length > 0) {
+            const videoEntry = aslDatasetMapping[datasetWord][0];
+            const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+            const videoUrl = videoEntry.url.startsWith('http') 
+              ? videoEntry.url 
+              : `${backendUrl}${videoEntry.url}`;
+            partialMatches.push({
+              word: word,
+              matchedWord: datasetWord,
+              videoUrl: videoUrl,
+              source: 'partial-match'
+            });
+          }
+        }
+      });
+    });
+    
+    if (partialMatches.length > 0) {
+      console.log(`[Backend] Using ${partialMatches.length} partial matches for words`);
+      res.json({
+        success: true,
+        text,
+        words: signWords,
+        videos: partialMatches.map(v => v.videoUrl),
+        wordMappings: partialMatches,
+        source: 'partial-match',
+        videoId,
+        message: `Using partial matches. For better results, download Kaggle ASL dataset.`
+      });
+      return;
+    }
+    
+    // Final fallback: return a demo video with helpful message
+    const fallbackVideo = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+    res.json({
+      success: true,
+      text,
+      words: signWords,
+      videos: [fallbackVideo],
+      source: 'fallback',
+      videoId,
+      message: `No ASL videos found for words: ${signWords.join(', ')}. To use real ASL videos:\n1. Download Kaggle ASL dataset: https://www.kaggle.com/datasets/ayuraj/asl-dataset\n2. Extract to backend/data/asl-dataset/\n3. Run: node scripts/process-asl-dataset.js\n4. Restart backend server`
+    });
+  } catch (error) {
+    console.error('Error getting OpenASL videos:', error);
+    res.status(500).json({ error: 'Failed to get OpenASL videos' });
+  }
+});
+
+// Get ASL animation data for real-time avatar (KEPT FOR BACKWARD COMPATIBILITY)
+app.post('/api/asl/animate', async (req, res) => {
+  try {
+    const { text, words, videoId } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    // Extract words if not provided
+    const signWords = words || extractSignWords(text.toLowerCase().trim());
+    
+    // Return animation instructions for the avatar
+    // This tells the frontend how to animate the avatar for each word/sign
+    res.json({
+      success: true,
+      text,
+      words: signWords,
+      animationData: {
+        // Duration for each word (milliseconds)
+        wordDurations: signWords.map(() => 800),
+        // Total animation duration
+        totalDuration: signWords.length * 800,
+        // Gesture types for each word (can be expanded)
+        gestures: signWords.map(word => ({
+          word: word,
+          gestureType: getGestureType(word), // Simple gesture mapping
+          duration: 800
+        }))
+      },
+      videoId
+    });
+  } catch (error) {
+    console.error('Error getting ASL animation:', error);
+    res.status(500).json({ error: 'Failed to get ASL animation' });
+  }
+});
+
+// Helper: Get gesture type for a word (simplified)
+function getGestureType(word) {
+  // This is a simplified mapping - in production, this would use
+  // a comprehensive ASL gesture database
+  const gestureMap = {
+    'hello': 'wave',
+    'hi': 'wave',
+    'thank': 'gratitude',
+    'you': 'point',
+    'welcome': 'open',
+    'please': 'request',
+    'yes': 'nod',
+    'no': 'shake'
+  };
+  
+  return gestureMap[word.toLowerCase()] || 'default';
+}
+
+// Get ASL video for a phrase (word-by-word) - KEPT FOR BACKWARD COMPATIBILITY
 app.post('/api/asl/video', async (req, res) => {
   try {
     const { phrase, videoId } = req.body;
@@ -61,23 +350,49 @@ app.post('/api/asl/video', async (req, res) => {
       return res.status(400).json({ error: 'Phrase is required' });
     }
 
-    // In production, this would:
-    // 1. Query SignLLM or ASL dataset
-    // 2. Generate or retrieve ASL video
-    // 3. Return video URL or stream
-
-    // For demo: return mock video URL
     const normalizedPhrase = phrase.toLowerCase().trim();
-    const aslVideoUrl = aslVideoDatabase[normalizedPhrase] || 
-                       `https://via.placeholder.com/300x400/667eea/ffffff?text=ASL+${encodeURIComponent(phrase)}`;
-
-    res.json({
-      success: true,
-      phrase,
-      videoUrl: aslVideoUrl,
-      source: 'mock', // 'signllm', 'openasl', 'kaggle', etc.
-      videoId
-    });
+    
+    // Extract individual words from the phrase
+    const words = extractSignWords(normalizedPhrase);
+    console.log(`[Backend] Extracted words from "${phrase}":`, words);
+    
+    // Get ASL video for each word
+    const aslVideos = words.map(word => {
+      // Check if we have a video for this word
+      const videoUrl = aslVideoDatabase[word];
+      
+      return {
+        word: word,
+        videoUrl: videoUrl || null,
+        hasVideo: !!videoUrl
+      };
+    }).filter(item => item.videoUrl !== null); // Only include words with videos
+    
+    // If we have videos, return them in sequence
+    if (aslVideos.length > 0) {
+      res.json({
+        success: true,
+        phrase,
+        videoUrl: aslVideos[0].videoUrl, // First video for backward compatibility
+        videos: aslVideos.map(v => v.videoUrl), // Array of video URLs in sequence
+        words: aslVideos.map(v => v.word), // Words being signed
+        source: 'word-mapping',
+        videoId
+      });
+    } else {
+      // No videos found - return a demo video as fallback
+      const fallbackVideo = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+      res.json({
+        success: true,
+        phrase,
+        videoUrl: fallbackVideo,
+        videos: [fallbackVideo],
+        words: [normalizedPhrase],
+        source: 'fallback',
+        videoId,
+        message: 'Using fallback video - ASL sign videos not available for these words'
+      });
+    }
   } catch (error) {
     console.error('Error getting ASL video:', error);
     res.status(500).json({ error: 'Failed to get ASL video' });
@@ -98,7 +413,7 @@ app.post('/api/asl/batch', async (req, res) => {
       return {
         phrase,
         videoUrl: aslVideoDatabase[normalizedPhrase] || 
-                 `https://via.placeholder.com/300x400/667eea/ffffff?text=ASL+${encodeURIComponent(phrase)}`,
+                 `https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4`,
         source: 'mock'
       };
     });
@@ -111,6 +426,36 @@ app.post('/api/asl/batch', async (req, res) => {
   } catch (error) {
     console.error('Error getting batch ASL videos:', error);
     res.status(500).json({ error: 'Failed to get ASL videos' });
+  }
+});
+
+// New endpoint: Get ASL videos for multiple words at once
+app.post('/api/asl/words', async (req, res) => {
+  try {
+    const { words } = req.body;
+
+    if (!words || !Array.isArray(words)) {
+      return res.status(400).json({ error: 'Words array is required' });
+    }
+
+    const aslVideos = words.map(word => {
+      const normalized = word.toLowerCase().trim();
+      return {
+        word: normalized,
+        videoUrl: aslVideoDatabase[normalized] || null,
+        hasVideo: !!aslVideoDatabase[normalized]
+      };
+    }).filter(item => item.videoUrl !== null);
+
+    res.json({
+      success: true,
+      videos: aslVideos,
+      totalWords: words.length,
+      foundVideos: aslVideos.length
+    });
+  } catch (error) {
+    console.error('Error getting ASL words:', error);
+    res.status(500).json({ error: 'Failed to get ASL words' });
   }
 });
 

@@ -1,0 +1,372 @@
+{
+  "zero": [
+    {
+      "path": "data\\asl_dataset\\0\\hand1_0_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/0/hand1_0_bot_seg_1_cropped.jpeg",
+      "index": 0,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "one": [
+    {
+      "path": "data\\asl_dataset\\1\\hand1_1_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/1/hand1_1_bot_seg_1_cropped.jpeg",
+      "index": 70,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "two": [
+    {
+      "path": "data\\asl_dataset\\2\\hand1_2_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/2/hand1_2_bot_seg_1_cropped.jpeg",
+      "index": 140,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "three": [
+    {
+      "path": "data\\asl_dataset\\3\\hand1_3_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/3/hand1_3_bot_seg_1_cropped.jpeg",
+      "index": 210,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "four": [
+    {
+      "path": "data\\asl_dataset\\4\\hand1_4_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/4/hand1_4_bot_seg_1_cropped.jpeg",
+      "index": 280,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "five": [
+    {
+      "path": "data\\asl_dataset\\5\\hand1_5_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/5/hand1_5_bot_seg_1_cropped.jpeg",
+      "index": 350,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "six": [
+    {
+      "path": "data\\asl_dataset\\6\\hand1_6_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/6/hand1_6_bot_seg_1_cropped.jpeg",
+      "index": 420,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "seven": [
+    {
+      "path": "data\\asl_dataset\\7\\hand1_7_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/7/hand1_7_bot_seg_1_cropped.jpeg",
+      "index": 490,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "eight": [
+    {
+      "path": "data\\asl_dataset\\8\\hand1_8_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/8/hand1_8_bot_seg_1_cropped.jpeg",
+      "index": 560,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "nine": [
+    {
+      "path": "data\\asl_dataset\\9\\hand1_9_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/9/hand1_9_bot_seg_1_cropped.jpeg",
+      "index": 630,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "a": [
+    {
+      "path": "data\\asl_dataset\\a\\hand1_a_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/a/hand1_a_bot_seg_1_cropped.jpeg",
+      "index": 700,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "asl": [
+    {
+      "path": "data\\asl_dataset\\asl_dataset\\0\\hand1_0_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/asl_dataset/0/hand1_0_bot_seg_1_cropped.jpeg",
+      "index": 770,
+      "type": "image",
+      "sequenceCount": 2515,
+      "note": "Image sequence: 2515 images available"
+    }
+  ],
+  "b": [
+    {
+      "path": "data\\asl_dataset\\b\\hand1_b_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/b/hand1_b_bot_seg_1_cropped.jpeg",
+      "index": 3285,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "c": [
+    {
+      "path": "data\\asl_dataset\\c\\hand1_c_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/c/hand1_c_bot_seg_1_cropped.jpeg",
+      "index": 3355,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "d": [
+    {
+      "path": "data\\asl_dataset\\d\\hand1_d_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/d/hand1_d_bot_seg_1_cropped.jpeg",
+      "index": 3425,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "e": [
+    {
+      "path": "data\\asl_dataset\\e\\hand1_e_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/e/hand1_e_bot_seg_1_cropped.jpeg",
+      "index": 3495,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "f": [
+    {
+      "path": "data\\asl_dataset\\f\\hand1_f_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/f/hand1_f_bot_seg_1_cropped.jpeg",
+      "index": 3565,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "g": [
+    {
+      "path": "data\\asl_dataset\\g\\hand1_g_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/g/hand1_g_bot_seg_1_cropped.jpeg",
+      "index": 3635,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "h": [
+    {
+      "path": "data\\asl_dataset\\h\\hand1_h_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/h/hand1_h_bot_seg_1_cropped.jpeg",
+      "index": 3705,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "i": [
+    {
+      "path": "data\\asl_dataset\\i\\hand1_i_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/i/hand1_i_bot_seg_1_cropped.jpeg",
+      "index": 3775,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "j": [
+    {
+      "path": "data\\asl_dataset\\j\\hand1_j_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/j/hand1_j_bot_seg_1_cropped.jpeg",
+      "index": 3845,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "k": [
+    {
+      "path": "data\\asl_dataset\\k\\hand1_k_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/k/hand1_k_bot_seg_1_cropped.jpeg",
+      "index": 3915,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "l": [
+    {
+      "path": "data\\asl_dataset\\l\\hand1_l_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/l/hand1_l_bot_seg_1_cropped.jpeg",
+      "index": 3985,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "m": [
+    {
+      "path": "data\\asl_dataset\\m\\hand1_m_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/m/hand1_m_bot_seg_1_cropped.jpeg",
+      "index": 4055,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "n": [
+    {
+      "path": "data\\asl_dataset\\n\\hand1_n_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/n/hand1_n_bot_seg_1_cropped.jpeg",
+      "index": 4125,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "o": [
+    {
+      "path": "data\\asl_dataset\\o\\hand1_o_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/o/hand1_o_bot_seg_1_cropped.jpeg",
+      "index": 4195,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "p": [
+    {
+      "path": "data\\asl_dataset\\p\\hand1_p_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/p/hand1_p_bot_seg_1_cropped.jpeg",
+      "index": 4265,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "q": [
+    {
+      "path": "data\\asl_dataset\\q\\hand1_q_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/q/hand1_q_bot_seg_1_cropped.jpeg",
+      "index": 4335,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "r": [
+    {
+      "path": "data\\asl_dataset\\r\\hand1_r_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/r/hand1_r_bot_seg_1_cropped.jpeg",
+      "index": 4405,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "s": [
+    {
+      "path": "data\\asl_dataset\\s\\hand1_s_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/s/hand1_s_bot_seg_1_cropped.jpeg",
+      "index": 4475,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "t": [
+    {
+      "path": "data\\asl_dataset\\t\\hand1_t_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/t/hand1_t_bot_seg_1_cropped.jpeg",
+      "index": 4545,
+      "type": "image",
+      "sequenceCount": 65,
+      "note": "Image sequence: 65 images available"
+    }
+  ],
+  "u": [
+    {
+      "path": "data\\asl_dataset\\u\\hand1_u_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/u/hand1_u_bot_seg_1_cropped.jpeg",
+      "index": 4610,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "v": [
+    {
+      "path": "data\\asl_dataset\\v\\hand1_v_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/v/hand1_v_bot_seg_1_cropped.jpeg",
+      "index": 4680,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "w": [
+    {
+      "path": "data\\asl_dataset\\w\\hand1_w_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/w/hand1_w_bot_seg_1_cropped.jpeg",
+      "index": 4750,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "x": [
+    {
+      "path": "data\\asl_dataset\\x\\hand1_x_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/x/hand1_x_bot_seg_1_cropped.jpeg",
+      "index": 4820,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "y": [
+    {
+      "path": "data\\asl_dataset\\y\\hand1_y_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/y/hand1_y_bot_seg_1_cropped.jpeg",
+      "index": 4890,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ],
+  "z": [
+    {
+      "path": "data\\asl_dataset\\z\\hand1_z_bot_seg_1_cropped.jpeg",
+      "url": "/asl-videos/data/asl_dataset/z/hand1_z_bot_seg_1_cropped.jpeg",
+      "index": 4960,
+      "type": "image",
+      "sequenceCount": 70,
+      "note": "Image sequence: 70 images available"
+    }
+  ]
+}

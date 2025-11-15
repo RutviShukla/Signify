@@ -14,9 +14,10 @@
    - Displays improved, high-contrast captions in a customizable overlay
 
 2. **ASL Support**:
-   - Toggleable ASL video window
-   - Displays pre-recorded ASL clips synchronized with video content
-   - Mock demo mode for hackathon presentation
+   - Toggleable ASL video window with human-like avatar
+   - Displays real ASL sign videos synchronized with video captions
+   - Supports Kaggle ASL dataset, OpenASL, and other ASL video sources
+   - Automatic word-to-video mapping for seamless translation
 
 3. **User-Friendly Interface**:
    - Simple popup controls
@@ -87,6 +88,27 @@ cd backend
 npm install
 npm start
 ```
+
+### ASL Dataset Setup (Optional but Recommended)
+
+To use real human ASL sign videos instead of demo videos:
+
+1. **Download Kaggle ASL Dataset**:
+   - Visit: https://www.kaggle.com/datasets/ayuraj/asl-dataset
+   - Download and extract to `backend/data/asl-dataset/`
+
+2. **Process the Dataset**:
+   ```bash
+   cd backend
+   node scripts/process-asl-dataset.js
+   ```
+
+3. **Restart Backend**:
+   ```bash
+   npm start
+   ```
+
+For detailed instructions, see [backend/ASL_DATASET_SETUP.md](backend/ASL_DATASET_SETUP.md)
 
 ## Usage
 

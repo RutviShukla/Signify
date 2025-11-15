@@ -21,6 +21,36 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
+// Proxy API requests to backend (to avoid CORS issues with HTTPS->HTTP)
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'proxyRequest') {
+    // Get backend URL from storage
+    chrome.storage.sync.get(['backendUrl'], async (result) => {
+      const backendUrl = result.backendUrl || 'http://localhost:3000';
+      const url = `${backendUrl}${request.path}`;
+      
+      try {
+        const response = await fetch(url, {
+          method: request.method || 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...request.headers
+          },
+          body: request.body ? JSON.stringify(request.body) : undefined
+        });
+        
+        const data = await response.json();
+        sendResponse({ success: true, data: data, status: response.status });
+      } catch (error) {
+        console.error('[Background] Proxy request error:', error);
+        sendResponse({ success: false, error: error.message });
+      }
+    });
+    
+    return true; // Keep channel open for async response
+  }
+});
+
 // Handle extension icon click (optional)
 chrome.action.onClicked.addListener((tab) => {
   // Popup will handle this, but we can add additional logic here if needed
