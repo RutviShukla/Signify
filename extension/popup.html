@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deaflix</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎬 Deaflix</h1>
+      <p class="subtitle">ASL-First Education</p>
+    </header>
+
+    <div class="status-indicator" id="statusIndicator">
+      <span class="status-dot"></span>
+      <span id="statusText">Ready</span>
+    </div>
+
+    <div class="controls">
+      <div class="control-item">
+        <label class="toggle-switch">
+          <input type="checkbox" id="captionsToggle">
+          <span class="slider"></span>
+        </label>
+        <div class="control-label">
+          <strong>Enhanced Captions</strong>
+          <span class="control-desc">AI-powered caption overlay</span>
+        </div>
+      </div>
+
+      <div class="control-item">
+        <label class="toggle-switch">
+          <input type="checkbox" id="aslToggle">
+          <span class="slider"></span>
+        </label>
+        <div class="control-label">
+          <strong>ASL Window</strong>
+          <span class="control-desc">Sign language support</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings">
+      <button class="btn btn-secondary" id="settingsBtn">Settings</button>
+    </div>
+
+    <div class="info-section">
+      <p class="info-text">
+        <strong>Current Page:</strong> <span id="currentPage">-</span>
+      </p>
+      <p class="info-text">
+        <strong>Status:</strong> <span id="pageStatus">Detecting video...</span>
+      </p>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+
