@@ -1,8 +1,10 @@
-# Deaflix - ASL-First Education Chrome Extension
+# Signify (Deaflix) - ASL-First Education Chrome Extension
+
+**CS Girlies November Hackathon - Make Learning Cool Again!**
 
 ## Project Overview
 
-**Deaflix** is a Chrome extension designed to make educational video content more accessible for the Deaf and hard-of-hearing community. The extension enhances video captions and provides ASL (American Sign Language) support through an intelligent overlay system.
+**Signify** (formerly Deaflix) is a Chrome extension designed to make educational video content more accessible for the Deaf and hard-of-hearing community. The extension enhances video captions and provides ASL (American Sign Language) support through an intelligent overlay system.
 
 ### Key Features
 
@@ -109,4 +111,3 @@ See `DEMO.md` for detailed demo instructions for judges.
 ## License
 
 MIT License - Hackathon Project
-
