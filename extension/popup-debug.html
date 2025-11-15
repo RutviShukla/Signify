@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deaflix Debug</title>
+  <style>
+    body {
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    .error {
+      color: red;
+      background: #ffe6e6;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
+    .success {
+      color: green;
+      background: #e6ffe6;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Deaflix Popup Debug</h1>
+  <div id="status"></div>
+  <script>
+    const status = document.getElementById('status');
+    
+    // Test 1: Check if popup.html loads
+    status.innerHTML += '<div class="success">✓ popup-debug.html loaded successfully</div>';
+    
+    // Test 2: Check Chrome APIs
+    if (typeof chrome !== 'undefined') {
+      status.innerHTML += '<div class="success">✓ Chrome APIs available</div>';
+      
+      if (chrome.storage) {
+        status.innerHTML += '<div class="success">✓ chrome.storage available</div>';
+      } else {
+        status.innerHTML += '<div class="error">✗ chrome.storage NOT available</div>';
+      }
+      
+      if (chrome.tabs) {
+        status.innerHTML += '<div class="success">✓ chrome.tabs available</div>';
+      } else {
+        status.innerHTML += '<div class="error">✗ chrome.tabs NOT available</div>';
+      }
+    } else {
+      status.innerHTML += '<div class="error">✗ Chrome APIs NOT available</div>';
+    }
+    
+    // Test 3: Check if popup.js would load
+    const script = document.createElement('script');
+    script.src = 'popup.js';
+    script.onload = () => {
+      status.innerHTML += '<div class="success">✓ popup.js loaded successfully</div>';
+    };
+    script.onerror = () => {
+      status.innerHTML += '<div class="error">✗ popup.js failed to load</div>';
+    };
+    document.head.appendChild(script);
+  </script>
+</body>
+</html>
+
+

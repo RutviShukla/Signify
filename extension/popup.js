@@ -81,7 +81,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Settings button
   settingsBtn.addEventListener('click', () => {
     // Open settings page or show settings modal
-    chrome.runtime.openOptionsPage();
+    // For now, just log - options page not implemented yet
+    console.log('Settings clicked - options page not implemented');
+    // chrome.runtime.openOptionsPage(); // Uncomment when options.html is created
   });
 
   // Initialize
