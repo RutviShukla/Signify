@@ -19,17 +19,29 @@
   let preloadedUrl = null;
   let preloadedDataUrl = null;
 
+  // Customization preferences
+  let customization = {
+    aslWidgetBg: 'default', // 'default', 'light', 'blue', 'transparent'
+    captionBg: 'default', // 'default', 'light', 'semi-transparent', 'minimal'
+    accentColor: 'blue' // 'blue', 'purple', 'green', 'orange'
+  };
+
   // Initialize
   const init = async () => {
     // Load settings
-    const result = await chrome.storage.sync.get(['aslEnabled', 'captionEnabled', 'backendUrl']);
+    const result = await chrome.storage.sync.get(['aslEnabled', 'captionEnabled', 'backendUrl', 'aslWidgetBg', 'captionBg', 'accentColor']);
     aslEnabled = result.aslEnabled || false;
     captionEnabled = result.captionEnabled !== undefined ? result.captionEnabled : true; // Default to true
     backendUrl = result.backendUrl || 'http://localhost:3000'; // Default to localhost, can be overridden
 
+    // Load customization settings
+    customization.aslWidgetBg = result.aslWidgetBg || 'default';
+    customization.captionBg = result.captionBg || 'default';
+    customization.accentColor = result.accentColor || 'blue';
+
     // Wait for video element
     waitForVideo();
-    
+
     // Listen for messages from popup
     chrome.runtime.onMessage.addListener(handleMessage);
 
@@ -117,6 +129,20 @@
       chrome.storage.sync.set({ backendUrl: backendUrl });
       console.log(`[Signify] Backend URL updated to: ${backendUrl}`);
       sendResponse({ success: true, backendUrl: backendUrl });
+    } else if (message.type === 'updateCustomization') {
+      // Update customization settings
+      Object.assign(customization, message);
+      console.log('[Signify] Customization updated:', customization);
+
+      // Apply customization to existing elements
+      if (aslWindow) {
+        applyASLCustomization(aslWindow);
+      }
+      if (captionOverlay) {
+        applyCaptionCustomization(captionOverlay);
+      }
+
+      sendResponse({ success: true, customization: customization });
     }
     return true;
   };
@@ -129,10 +155,10 @@
     captionOverlay = document.createElement('div');
     captionOverlay.id = 'signify-caption-overlay';
     captionOverlay.className = 'signify-overlay';
-    
-    // Calculate initial position (centered at bottom)
-    const initialLeft = (window.innerWidth / 2);
-    const initialTop = window.innerHeight - 150; // Bottom with margin
+
+    // Calculate initial position near ASL widget (bottom-left of ASL position)
+    const initialLeft = window.innerWidth - 480; // 240px left of ASL widget (which is at -240 from right)
+    const initialTop = window.innerHeight - 150; // Bottom with margin, same as ASL
     
     captionOverlay.style.cssText = `
       position: fixed;
@@ -161,10 +187,13 @@
     `;
     
     document.body.appendChild(captionOverlay);
-    
+
+    // Apply customization to the caption overlay
+    applyCaptionCustomization(captionOverlay);
+
     // Make the caption overlay draggable
     makeDraggable(captionOverlay, 'captionOverlayX', 'captionOverlayY', []);
-    
+
     console.log('[Signify] Caption overlay created (shows current word being signed)');
   };
 
@@ -930,6 +959,71 @@
         setTimeout(() => playQueue(), 200);
       }
     }
+  };
+
+  // Apply customization styles to ASL widget
+  const applyASLCustomization = (element) => {
+    const style = element.style;
+    switch (customization.aslWidgetBg) {
+      case 'light':
+        style.background = 'linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%)';
+        break;
+      case 'blue':
+        style.background = 'linear-gradient(145deg, #3b82f6 0%, #1d4ed8 100%)';
+        break;
+      case 'transparent':
+        style.background = 'rgba(255, 255, 255, 0.1)';
+        break;
+      case 'default':
+      default:
+        style.background = '#111';
+        break;
+    }
+    console.log(`[Signify] Applied ASL customization: ${customization.aslWidgetBg}`);
+  };
+
+  // Apply customization styles to caption overlay
+  const applyCaptionCustomization = (element) => {
+    const style = element.style;
+    switch (customization.captionBg) {
+      case 'light':
+        style.background = 'rgba(255, 255, 255, 0.9)';
+        style.color = '#000';
+        style.borderColor = '#e9ecef';
+        break;
+      case 'semi-transparent':
+        style.background = 'rgba(0, 0, 0, 0.7)';
+        style.color = '#fff';
+        style.borderColor = '#667eea';
+        break;
+      case 'minimal':
+        style.background = 'rgba(255, 255, 255, 0.1)';
+        style.color = '#fff';
+        style.border = 'none';
+        break;
+      case 'default':
+      default:
+        style.background = 'rgba(0, 0, 0, 0.9)';
+        style.color = '#fff';
+        style.borderColor = '#667eea';
+        break;
+    }
+
+    // Apply accent color to border
+    style.borderColor = getAccentColor(customization.accentColor);
+
+    console.log(`[Signify] Applied caption customization: ${customization.captionBg}, accent: ${customization.accentColor}`);
+  };
+
+  // Get accent color value
+  const getAccentColor = (accent) => {
+    const colors = {
+      blue: '#3b82f6',
+      purple: '#8b5cf6',
+      green: '#10b981',
+      orange: '#f59e0b'
+    };
+    return colors[accent] || colors.blue;
   };
 
   // Initialize on load
