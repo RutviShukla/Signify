@@ -107,8 +107,43 @@
     captionOverlay = document.createElement('div');
     captionOverlay.id = 'deaflix-caption-overlay';
     captionOverlay.className = 'deaflix-overlay';
+    
+    // Calculate initial position (centered at bottom)
+    // We'll use the center of the screen minus half the element width
+    const initialLeft = (window.innerWidth / 2);
+    const initialTop = window.innerHeight - 150; // Bottom with margin
+    
+    // Override CSS positioning to use left/top for dragging
+    // Remove the CSS transform-based centering and use absolute positioning
+    captionOverlay.style.cssText = `
+      position: fixed;
+      left: ${initialLeft}px;
+      top: ${initialTop}px;
+      background: rgba(0, 0, 0, 0.9);
+      color: #fff;
+      padding: 16px 24px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+      max-width: 80%;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      border: 2px solid #667eea;
+      display: none;
+      line-height: 1.5;
+      word-wrap: break-word;
+      cursor: grab;
+      user-select: none;
+      transform: translateX(-50%);
+    `;
+    
     document.body.appendChild(captionOverlay);
-    console.log('[Deaflix] Caption overlay created');
+    
+    // Make the caption overlay draggable
+    makeDraggable(captionOverlay, 'captionOverlayX', 'captionOverlayY', []);
+    
+    console.log('[Deaflix] Caption overlay created (draggable)');
   };
 
   // Show overlay with text
@@ -122,6 +157,150 @@
     }
   };
 
+  // Make element draggable (generic function)
+  const makeDraggable = (element, storageKeyX, storageKeyY, excludeElements = []) => {
+    let isDragging = false;
+    let currentX = 0;
+    let currentY = 0;
+    let initialX = 0;
+    let initialY = 0;
+    let xOffset = 0;
+    let yOffset = 0;
+
+    // Get initial position from computed style
+    const getInitialPosition = () => {
+      const rect = element.getBoundingClientRect();
+      return {
+        x: rect.left,
+        y: rect.top
+      };
+    };
+
+    // Ensure position is within viewport bounds
+    const constrainToViewport = (x, y) => {
+      const maxX = window.innerWidth - element.offsetWidth;
+      const maxY = window.innerHeight - element.offsetHeight;
+      return {
+        x: Math.max(0, Math.min(x, maxX)),
+        y: Math.max(0, Math.min(y, maxY))
+      };
+    };
+
+    // Load saved position from storage or use default
+    chrome.storage.sync.get([storageKeyX, storageKeyY], (result) => {
+      const initialPos = getInitialPosition();
+      if (result[storageKeyX] !== undefined && result[storageKeyY] !== undefined) {
+        // Constrain saved position to current viewport
+        const constrained = constrainToViewport(result[storageKeyX], result[storageKeyY]);
+        xOffset = constrained.x;
+        yOffset = constrained.y;
+        element.style.left = `${xOffset}px`;
+        element.style.top = `${yOffset}px`;
+        element.style.bottom = 'auto';
+        element.style.right = 'auto';
+        element.style.transform = 'none'; // Remove any transform
+      } else {
+        // Save initial position
+        xOffset = initialPos.x;
+        yOffset = initialPos.y;
+        chrome.storage.sync.set({
+          [storageKeyX]: xOffset,
+          [storageKeyY]: yOffset
+        });
+      }
+    });
+
+    // Handle window resize to keep widget on screen
+    const handleResize = () => {
+      if (!isDragging) {
+        const constrained = constrainToViewport(xOffset, yOffset);
+        xOffset = constrained.x;
+        yOffset = constrained.y;
+        element.style.left = `${xOffset}px`;
+        element.style.top = `${yOffset}px`;
+      }
+    };
+    window.addEventListener('resize', handleResize);
+
+    const dragStart = (e) => {
+      // Don't drag if clicking on excluded elements
+      if (excludeElements.some(excluded => e.target === excluded || excluded.contains(e.target))) {
+        return;
+      }
+
+      const rect = element.getBoundingClientRect();
+      if (e.type === 'touchstart') {
+        initialX = e.touches[0].clientX - rect.left;
+        initialY = e.touches[0].clientY - rect.top;
+      } else {
+        initialX = e.clientX - rect.left;
+        initialY = e.clientY - rect.top;
+      }
+
+      isDragging = true;
+      element.style.cursor = 'grabbing';
+      element.style.transition = 'none'; // Disable transitions during drag
+      const originalZIndex = element.style.zIndex;
+      element.style.zIndex = '99999999'; // Bring to front while dragging
+    };
+
+    const drag = (e) => {
+      if (isDragging) {
+        e.preventDefault();
+        
+        if (e.type === 'touchmove') {
+          currentX = e.touches[0].clientX - initialX;
+          currentY = e.touches[0].clientY - initialY;
+        } else {
+          currentX = e.clientX - initialX;
+          currentY = e.clientY - initialY;
+        }
+
+        // Keep widget within viewport bounds
+        const constrained = constrainToViewport(currentX, currentY);
+        currentX = constrained.x;
+        currentY = constrained.y;
+
+        xOffset = currentX;
+        yOffset = currentY;
+
+        element.style.left = `${currentX}px`;
+        element.style.top = `${currentY}px`;
+        element.style.bottom = 'auto';
+        element.style.right = 'auto';
+        element.style.transform = 'none'; // Remove any transform
+      }
+    };
+
+    const dragEnd = () => {
+      if (isDragging) {
+        isDragging = false;
+        element.style.cursor = 'grab';
+        element.style.transition = ''; // Re-enable transitions
+        
+        // Save position to storage
+        chrome.storage.sync.set({
+          [storageKeyX]: xOffset,
+          [storageKeyY]: yOffset
+        });
+      }
+    };
+
+    // Mouse events
+    element.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+
+    // Touch events for mobile
+    element.addEventListener('touchstart', dragStart, { passive: false });
+    document.addEventListener('touchmove', drag, { passive: false });
+    document.addEventListener('touchend', dragEnd);
+
+    // Make cursor indicate draggable
+    element.style.cursor = 'grab';
+    element.style.userSelect = 'none';
+  };
+
   // Create ASL window with circular avatar mask
   const createASLWindow = () => {
     if (aslWindow) {
@@ -130,10 +309,15 @@
 
     aslWindow = document.createElement('div');
     aslWindow.id = 'aslAvatarContainer';
+    
+    // Calculate initial position (bottom-right corner)
+    const initialLeft = window.innerWidth - 240; // 220px width + 20px margin
+    const initialTop = window.innerHeight - 300; // 220px height + 80px margin
+    
     aslWindow.style.cssText = `
       position: fixed;
-      bottom: 80px;
-      right: 20px;
+      left: ${initialLeft}px;
+      top: ${initialTop}px;
       width: 220px;
       height: 220px;
       background: #111;
@@ -143,6 +327,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      cursor: grab;
+      user-select: none;
     `;
 
     // Create video element for videos
@@ -158,6 +344,7 @@
       object-fit: cover;
       transition: opacity 0.2s ease-in-out;
       display: none;
+      pointer-events: none;
     `;
 
     // Create image element for letter images (JPEG)
@@ -169,13 +356,17 @@
       object-fit: cover;
       transition: opacity 0.2s ease-in-out;
       display: none;
+      pointer-events: none;
     `;
 
     aslWindow.appendChild(aslPlayer);
     aslWindow.appendChild(aslImage);
     document.body.appendChild(aslWindow);
     
-    console.log('[Deaflix] ASL avatar window created (supports videos and images)');
+    // Make the window draggable (exclude video/image elements from drag)
+    makeDraggable(aslWindow, 'aslWindowX', 'aslWindowY', [aslPlayer, aslImage]);
+    
+    console.log('[Deaflix] ASL avatar window created (supports videos and images, draggable)');
   };
 
   // Start caption observer
