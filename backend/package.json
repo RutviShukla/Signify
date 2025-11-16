@@ -1,7 +1,7 @@
 {
-  "name": "deaflix-backend",
+  "name": "signify-backend",
   "version": "1.0.0",
-  "description": "Backend API for Deaflix Chrome Extension",
+  "description": "Backend API for Signify Chrome Extension",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

@@ -3,28 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deaflix</title>
+  <title>Signify</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>🎬 Deaflix</h1>
+      <h1>🎬 Signify</h1>
       <p class="subtitle">ASL-First Accessibility</p>
     </header>
 
     <div class="controls">
-      <div class="control-item">
-        <label class="toggle-switch">
-          <input type="checkbox" id="captionsToggle">
-          <span class="slider"></span>
-        </label>
-        <div class="control-label">
-          <strong>Enhanced Captions</strong>
-          <span class="control-desc">High-contrast caption overlay</span>
-        </div>
-      </div>
-
       <div class="control-item">
         <label class="toggle-switch">
           <input type="checkbox" id="aslToggle">
@@ -33,6 +22,17 @@
         <div class="control-label">
           <strong>ASL Avatar</strong>
           <span class="control-desc">Sign language support</span>
+        </div>
+      </div>
+
+      <div class="control-item">
+        <label class="toggle-switch">
+          <input type="checkbox" id="captionToggle">
+          <span class="slider"></span>
+        </label>
+        <div class="control-label">
+          <strong>Word Captions</strong>
+          <span class="control-desc">Show current word being signed</span>
         </div>
       </div>
     </div>

@@ -1,13 +1,13 @@
 // Popup UI Logic
 document.addEventListener('DOMContentLoaded', async () => {
-  const captionsToggle = document.getElementById('captionsToggle');
   const aslToggle = document.getElementById('aslToggle');
+  const captionToggle = document.getElementById('captionToggle');
 
   // Load saved settings
   const loadSettings = async () => {
-    const result = await chrome.storage.sync.get(['captionsEnabled', 'aslEnabled']);
-    captionsToggle.checked = result.captionsEnabled || false;
+    const result = await chrome.storage.sync.get(['aslEnabled', 'captionEnabled']);
     aslToggle.checked = result.aslEnabled || false;
+    captionToggle.checked = result.captionEnabled !== undefined ? result.captionEnabled : true; // Default to true
   };
 
   // Send message to content script
@@ -22,18 +22,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  // Captions toggle handler
-  captionsToggle.addEventListener('change', async (e) => {
-    const enabled = e.target.checked;
-    await chrome.storage.sync.set({ captionsEnabled: enabled });
-    await sendMessage('toggleCaptions', { enabled });
-  });
-
   // ASL toggle handler
   aslToggle.addEventListener('change', async (e) => {
     const enabled = e.target.checked;
     await chrome.storage.sync.set({ aslEnabled: enabled });
     await sendMessage('toggleASL', { enabled });
+  });
+
+  // Caption toggle handler
+  captionToggle.addEventListener('change', async (e) => {
+    const enabled = e.target.checked;
+    await chrome.storage.sync.set({ captionEnabled: enabled });
+    await sendMessage('toggleCaption', { enabled });
   });
 
   // Initialize

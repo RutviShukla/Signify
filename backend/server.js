@@ -185,7 +185,7 @@ if (fs.existsSync(aslDatasetPath)) {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Deaflix API is running' });
+  res.json({ status: 'ok', message: 'Signify API is running' });
 });
 
 // Video mapping endpoint with full WLASL pipeline

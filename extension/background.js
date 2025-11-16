@@ -1,6 +1,6 @@
 // Background Service Worker
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('Deaflix extension installed');
+  console.log('Signify extension installed');
   
   // Set default settings
   chrome.storage.sync.set({

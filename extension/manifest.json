@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Deaflix",
+  "name": "Signify",
   "version": "1.0.0",
   "description": "ASL-First Accessibility Layer for YouTube",
   "permissions": [

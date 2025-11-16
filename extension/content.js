@@ -3,10 +3,10 @@
   'use strict';
 
   // Global state
-  let captionsEnabled = false;
   let aslEnabled = false;
+  let captionEnabled = true; // Default to true
   let lastCaption = '';
-  let videoQueue = [];
+  let videoQueue = []; // Array of {url, word, gloss} objects
   let playing = false;
   let aslWindow = null;
   let captionOverlay = null;
@@ -21,9 +21,9 @@
   // Initialize
   const init = async () => {
     // Load settings
-    const result = await chrome.storage.sync.get(['captionsEnabled', 'aslEnabled']);
-    captionsEnabled = result.captionsEnabled || false;
+    const result = await chrome.storage.sync.get(['aslEnabled', 'captionEnabled']);
     aslEnabled = result.aslEnabled || false;
+    captionEnabled = result.captionEnabled !== undefined ? result.captionEnabled : true; // Default to true
 
     // Wait for video element
     waitForVideo();
@@ -31,8 +31,11 @@
     // Listen for messages from popup
     chrome.runtime.onMessage.addListener(handleMessage);
 
-    // Start caption monitoring if enabled
-    if (captionsEnabled || aslEnabled) {
+    // Start caption monitoring if ASL is enabled
+    if (aslEnabled) {
+      if (!captionOverlay) {
+        createCaptionOverlay();
+      }
       startCaptionObserver();
     }
   };
@@ -43,38 +46,23 @@
       videoElement = document.querySelector('video');
       if (videoElement) {
         clearInterval(checkVideo);
-        console.log('[Deaflix] Video element found');
+        console.log('[Signify] Video element found');
       }
     }, 500);
   };
 
   // Handle messages from popup
   const handleMessage = (message, sender, sendResponse) => {
-    if (message.type === 'toggleCaptions') {
-      captionsEnabled = message.enabled;
-      chrome.storage.sync.set({ captionsEnabled: message.enabled });
-      
-      if (captionsEnabled) {
-        if (!captionOverlay) {
-          createCaptionOverlay();
-        }
-        startCaptionObserver();
-      } else {
-        if (captionOverlay) {
-          captionOverlay.style.display = 'none';
-        }
-        if (captionObserver) {
-          captionObserver.disconnect();
-        }
-      }
-      sendResponse({ success: true });
-    } else if (message.type === 'toggleASL') {
+    if (message.type === 'toggleASL') {
       aslEnabled = message.enabled;
       chrome.storage.sync.set({ aslEnabled: message.enabled });
       
       if (aslEnabled) {
         if (!aslWindow) {
           createASLWindow();
+        }
+        if (!captionOverlay) {
+          createCaptionOverlay();
         }
         startCaptionObserver();
       } else {
@@ -84,6 +72,9 @@
           aslPlayer = null;
           aslImage = null;
         }
+        if (captionOverlay) {
+          captionOverlay.style.display = 'none';
+        }
         if (preloader) {
           preloader.remove();
           preloader = null;
@@ -92,29 +83,50 @@
         preloadedDataUrl = null;
         videoQueue = [];
         playing = false;
+        if (captionObserver) {
+          captionObserver.disconnect();
+          captionObserver = null;
+        }
+      }
+      sendResponse({ success: true });
+    } else if (message.type === 'toggleCaption') {
+      captionEnabled = message.enabled;
+      chrome.storage.sync.set({ captionEnabled: message.enabled });
+      
+      if (captionOverlay) {
+        if (captionEnabled) {
+          // If captions are enabled and we're currently playing, show the current word
+          // Check if there's a word in the current media item being played
+          // The word will be shown automatically when playQueue runs next
+          if (playing && videoQueue.length > 0) {
+            // Will be shown on next playQueue call
+          } else if (captionOverlay.textContent && captionOverlay.textContent.trim()) {
+            // Show existing word if one is already displayed
+            captionOverlay.style.display = 'block';
+          }
+        } else {
+          // Hide the caption overlay
+          captionOverlay.style.display = 'none';
+        }
       }
       sendResponse({ success: true });
     }
     return true;
   };
-
-  // Create caption overlay
+  // Create caption overlay (shows current word being signed)
   const createCaptionOverlay = () => {
     if (captionOverlay) {
-      captionOverlay.remove();
+      return;
     }
 
     captionOverlay = document.createElement('div');
-    captionOverlay.id = 'deaflix-caption-overlay';
-    captionOverlay.className = 'deaflix-overlay';
+    captionOverlay.id = 'signify-caption-overlay';
+    captionOverlay.className = 'signify-overlay';
     
     // Calculate initial position (centered at bottom)
-    // We'll use the center of the screen minus half the element width
     const initialLeft = (window.innerWidth / 2);
     const initialTop = window.innerHeight - 150; // Bottom with margin
     
-    // Override CSS positioning to use left/top for dragging
-    // Remove the CSS transform-based centering and use absolute positioning
     captionOverlay.style.cssText = `
       position: fixed;
       left: ${initialLeft}px;
@@ -127,15 +139,18 @@
       font-weight: 600;
       text-align: center;
       max-width: 80%;
-      z-index: 10000;
+      z-index: 10000000;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
       border: 2px solid #667eea;
       display: none;
+      visibility: visible;
+      opacity: 1;
       line-height: 1.5;
       word-wrap: break-word;
       cursor: grab;
       user-select: none;
       transform: translateX(-50%);
+      pointer-events: auto;
     `;
     
     document.body.appendChild(captionOverlay);
@@ -143,17 +158,35 @@
     // Make the caption overlay draggable
     makeDraggable(captionOverlay, 'captionOverlayX', 'captionOverlayY', []);
     
-    console.log('[Deaflix] Caption overlay created (draggable)');
+    console.log('[Signify] Caption overlay created (shows current word being signed)');
   };
 
-  // Show overlay with text
-  const showOverlay = (text) => {
+  // Show current word in caption overlay
+  const showCurrentWord = (word) => {
+    // Only show if captions are enabled
+    if (!captionEnabled) {
+      if (captionOverlay) {
+        captionOverlay.style.display = 'none';
+      }
+      return;
+    }
+
+    console.log('[Signify] showCurrentWord called with:', word);
     if (!captionOverlay) {
+      console.log('[Signify] Creating caption overlay...');
       createCaptionOverlay();
     }
-    if (captionOverlay) {
-      captionOverlay.textContent = text;
+    if (captionOverlay && word) {
+      captionOverlay.textContent = word;
       captionOverlay.style.display = 'block';
+      captionOverlay.style.visibility = 'visible';
+      captionOverlay.style.opacity = '1';
+      console.log('[Signify] ✅ Caption overlay showing word:', word);
+    } else if (captionOverlay && !word) {
+      captionOverlay.style.display = 'none';
+      console.log('[Signify] Hiding caption overlay (no word)');
+    } else {
+      console.warn('[Signify] ⚠️ Caption overlay not available');
     }
   };
 
@@ -366,7 +399,7 @@
     // Make the window draggable (exclude video/image elements from drag)
     makeDraggable(aslWindow, 'aslWindowX', 'aslWindowY', [aslPlayer, aslImage]);
     
-    console.log('[Deaflix] ASL avatar window created (supports videos and images, draggable)');
+    console.log('[Signify] ASL avatar window created (supports videos and images, draggable)');
   };
 
   // Start caption observer
@@ -402,11 +435,59 @@
 
   // Extract caption from DOM
   const extractCaption = () => {
-    const captionSegments = document.querySelectorAll('.ytp-caption-segment');
+    // Try multiple selectors for caption segments (YouTube uses different class names)
+    const segmentSelectors = [
+      '.ytp-caption-segment',
+      '.caption-segment',
+      '[class*="caption-segment"]',
+      '.ytp-caption-window .ytp-caption-text',
+      '.ytp-caption-text',
+      '[class*="caption-text"]',
+      'span[dir="ltr"]', // Common in YouTube captions
+      '.ytp-caption-window span'
+    ];
+
+    let captionSegments = [];
+    for (const selector of segmentSelectors) {
+      const segments = document.querySelectorAll(selector);
+      if (segments.length > 0) {
+        // Filter to only include visible caption segments
+        captionSegments = Array.from(segments).filter(seg => {
+          const style = window.getComputedStyle(seg);
+          return style.display !== 'none' && 
+                 style.visibility !== 'hidden' && 
+                 seg.textContent.trim().length > 0;
+        });
+        if (captionSegments.length > 0) {
+          console.log(`[Signify] Found ${captionSegments.length} caption segments with selector: ${selector}`);
+          break;
+        }
+      }
+    }
     
     if (captionSegments.length === 0) {
-      if (captionOverlay) {
-        captionOverlay.style.display = 'none';
+      // Check if captions might be in a different format
+      const allTextElements = document.querySelectorAll('.ytp-caption-window-container *');
+      const visibleTexts = Array.from(allTextElements)
+        .filter(el => {
+          const style = window.getComputedStyle(el);
+          const text = el.textContent.trim();
+          return style.display !== 'none' && 
+                 style.visibility !== 'hidden' && 
+                 text.length > 0 &&
+                 el.children.length === 0; // Leaf nodes only
+        })
+        .map(el => el.textContent.trim())
+        .filter((text, index, arr) => arr.indexOf(text) === index); // Remove duplicates
+      
+      if (visibleTexts.length > 0) {
+        const captionText = visibleTexts.join(' ');
+        if (captionText && captionText !== lastCaption) {
+          console.log('[Signify] Found captions using fallback method:', captionText);
+          handleCaption(captionText);
+          lastCaption = captionText;
+          return;
+        }
       }
       return;
     }
@@ -425,18 +506,13 @@
 
   // Handle caption text
   const handleCaption = (text) => {
-    console.log('[Deaflix] New caption:', text);
-
-    // Update caption overlay
-    if (captionsEnabled) {
-      showOverlay(text);
-    }
+    console.log('[Signify] New caption:', text);
 
     // Load ASL sequence
     if (aslEnabled) {
       // Ensure ASL window exists
       if (!aslWindow) {
-        console.log('[Deaflix] Creating ASL window for caption processing');
+        console.log('[Signify] Creating ASL window for caption processing');
         createASLWindow();
       }
       loadASLSequence(text);
@@ -447,7 +523,7 @@
   const loadASLSequence = async (text) => {
     // Extract words from text
     const words = extractWords(text);
-    console.log('[Deaflix] Extracted words:', words);
+    console.log('[Signify] Extracted words:', words);
 
     if (words.length === 0) {
       return;
@@ -472,55 +548,65 @@
         body: { words: words }
       }, (response) => {
         if (chrome.runtime.lastError) {
-          console.error('[Deaflix] Proxy error:', chrome.runtime.lastError);
-          console.error('[Deaflix] Make sure backend is running on http://localhost:3000');
+          console.error('[Signify] Proxy error:', chrome.runtime.lastError);
+          console.error('[Signify] Make sure backend is running on http://localhost:3000');
           return;
         }
 
-        console.log('[Deaflix] Backend response:', response);
+        console.log('[Signify] Backend response:', response);
 
         if (response && response.success && response.data) {
           const data = response.data;
-          console.log('[Deaflix] Backend data:', data);
+          console.log('[Signify] Backend data:', data);
           
           // Handle sequence format (WLASL videos only)
           if (data.success && data.sequence && Array.isArray(data.sequence) && data.sequence.length > 0) {
             // Stop any currently playing sequence BEFORE setting new queue
             stopASLSequence();
             
-            // Extract video URLs from sequence
-            videoQueue = data.sequence.map(item => item.url);
-            console.log('[Deaflix] ✅ Queued', videoQueue.length, 'WLASL videos');
-            console.log('[Deaflix] Video URLs:', videoQueue);
-            console.log('[Deaflix] Found words:', data.foundWords || []);
+            // Store full sequence objects with word information
+            videoQueue = data.sequence.map(item => ({
+              url: item.url,
+              word: item.word || item.gloss || '',
+              gloss: item.gloss || item.word || '',
+              type: item.type || 'video'
+            }));
+            console.log('[Signify] ✅ Queued', videoQueue.length, 'WLASL videos');
+            console.log('[Signify] Video queue:', videoQueue.map(q => ({ word: q.word, url: q.url })));
+            console.log('[Signify] Found words:', data.foundWords || []);
             if (data.notFoundWords && data.notFoundWords.length > 0) {
-              console.log('[Deaflix] Words not in dataset (skipped):', data.notFoundWords);
+              console.log('[Signify] Words not in dataset (skipped):', data.notFoundWords);
             }
             
             // Start playing the queue
             playQueue();
           } else if (data.success && data.videos && Array.isArray(data.videos) && data.videos.length > 0) {
-            // Fallback to videos array format
-            videoQueue = data.videos;
-            console.log('[Deaflix] ✅ Queued', videoQueue.length, 'videos:', videoQueue);
+            // Fallback to videos array format (convert to objects)
+            videoQueue = data.videos.map(url => ({
+              url: url,
+              word: '',
+              gloss: '',
+              type: 'video'
+            }));
+            console.log('[Signify] ✅ Queued', videoQueue.length, 'videos:', videoQueue);
             playQueue();
           } else {
-            console.warn('[Deaflix] ⚠️ No WLASL videos found for words:', words);
-            console.warn('[Deaflix] Backend found', data.wordsFound || 0, 'out of', data.wordsTotal || words.length, 'words');
+            console.warn('[Signify] ⚠️ No WLASL videos found for words:', words);
+            console.warn('[Signify] Backend found', data.wordsFound || 0, 'out of', data.wordsTotal || words.length, 'words');
             if (data.availableWords) {
-              console.warn('[Deaflix] Available words in WLASL dataset:', data.availableWords.slice(0, 20), '...');
+              console.warn('[Signify] Available words in WLASL dataset:', data.availableWords.slice(0, 20), '...');
             }
             if (data.notFoundWords && data.notFoundWords.length > 0) {
-              console.warn('[Deaflix] Words not in dataset:', data.notFoundWords);
+              console.warn('[Signify] Words not in dataset:', data.notFoundWords);
             }
-            console.warn('[Deaflix] Tip: Add more words to WLASL dataset or run setup scripts');
+            console.warn('[Signify] Tip: Add more words to WLASL dataset or run setup scripts');
           }
         } else {
-          console.error('[Deaflix] ❌ Invalid response from backend:', response);
+          console.error('[Signify] ❌ Invalid response from backend:', response);
         }
       });
     } catch (error) {
-      console.error('[Deaflix] Error loading ASL sequence:', error);
+      console.error('[Signify] Error loading ASL sequence:', error);
     }
   };
 
@@ -538,8 +624,8 @@
       .split(/\s+/)
       .filter(w => w.length > 0);
     
-    console.log('[Deaflix] Extracted words from:', text);
-    console.log('[Deaflix] Normalized words:', words);
+    console.log('[Signify] Extracted words from:', text);
+    console.log('[Signify] Normalized words:', words);
     
     return words;
   };
@@ -631,29 +717,32 @@
       aslImage.src = '';
       aslImage.style.opacity = '0';
     }
+    if (captionOverlay) {
+      captionOverlay.style.display = 'none';
+    }
     preloadedUrl = null;
     preloadedDataUrl = null;
-    console.log('[Deaflix] Stopped ASL sequence');
+    console.log('[Signify] Stopped ASL sequence');
   };
 
   // Play video queue with smooth transitions
   const playQueue = async () => {
-    console.log('[Deaflix] playQueue() called - playing:', playing, 'queue length:', videoQueue.length);
+    console.log('[Signify] playQueue() called - playing:', playing, 'queue length:', videoQueue.length);
     
     if (playing || videoQueue.length === 0) {
-      console.log('[Deaflix] playQueue() returning early - playing:', playing, 'queue empty:', videoQueue.length === 0);
+      console.log('[Signify] playQueue() returning early - playing:', playing, 'queue empty:', videoQueue.length === 0);
       return;
     }
 
     if (!aslWindow || !aslPlayer || !aslImage) {
-      console.error('[Deaflix] ASL window or media elements not found', {
+      console.error('[Signify] ASL window or media elements not found', {
         aslWindow: !!aslWindow,
         aslPlayer: !!aslPlayer,
         aslImage: !!aslImage
       });
       // Try to create ASL window if it doesn't exist
       if (!aslWindow && aslEnabled) {
-        console.log('[Deaflix] Creating ASL window...');
+        console.log('[Signify] Creating ASL window...');
         createASLWindow();
         // Retry after a short delay
         setTimeout(() => playQueue(), 100);
@@ -662,19 +751,34 @@
     }
 
     playing = true;
-    const mediaUrl = videoQueue.shift();
+    const mediaItem = videoQueue.shift();
+    
+    // Handle both object format and legacy string format
+    const mediaUrl = typeof mediaItem === 'string' ? mediaItem : mediaItem.url;
+    // Extract word - prefer word, fallback to gloss, then empty string
+    let currentWord = '';
+    if (typeof mediaItem === 'object' && mediaItem) {
+      currentWord = mediaItem.word || mediaItem.gloss || '';
+    }
+    
     const isImage = isImageUrl(mediaUrl);
     const isVideo = isVideoUrl(mediaUrl);
     const mediaType = isImage ? 'image' : (isVideo ? 'video' : 'unknown');
     
-    console.log(`[Deaflix] 🎬 Playing ${mediaType}:`, mediaUrl);
-    console.log('[Deaflix] Queue status:', videoQueue.length, 'remaining');
+    console.log(`[Signify] 🎬 Playing ${mediaType}:`, mediaUrl);
+    console.log('[Signify] MediaItem:', mediaItem);
+    console.log('[Signify] Extracted word:', currentWord);
+    console.log('[Signify] Queue status:', videoQueue.length, 'remaining');
+
+    // Show current word in caption overlay (always show if word exists)
+    showCurrentWord(currentWord);
 
     // Preload next clip if available
     if (videoQueue.length > 0) {
-      const nextUrl = videoQueue[0];
+      const nextItem = videoQueue[0];
+      const nextUrl = typeof nextItem === 'string' ? nextItem : nextItem.url;
       preloadNextClip(nextUrl).catch(err => {
-        console.log('[Deaflix] Preload failed for next clip:', err);
+        console.log('[Signify] Preload failed for next clip:', err);
       });
     }
 
@@ -686,7 +790,7 @@
         dataUrl = preloadedDataUrl;
         preloadedUrl = null;
         preloadedDataUrl = null;
-        console.log('[Deaflix] Using preloaded video');
+        console.log('[Signify] Using preloaded video');
       } else {
         // Fetch fresh data URL
         dataUrl = await new Promise((resolve, reject) => {
@@ -740,7 +844,7 @@
 
         // Fade in image
         aslImage.style.opacity = '1';
-        console.log('[Deaflix] ✅ Image displayed successfully');
+        console.log('[Signify] ✅ Image displayed successfully');
 
         // Show image for 500ms (letter signs are quick)
         await wait(500);
@@ -773,7 +877,7 @@
         // Play video
         try {
           await aslPlayer.play();
-          console.log('[Deaflix] ✅ Video playing successfully');
+          console.log('[Signify] ✅ Video playing successfully');
           
           // Fade in
           aslPlayer.style.opacity = '1';
@@ -781,11 +885,11 @@
           // Wait for video to end
           await new Promise((resolve) => {
             aslPlayer.onended = () => {
-              console.log('[Deaflix] ✅ Video ended successfully');
+              console.log('[Signify] ✅ Video ended successfully');
               resolve();
             };
             aslPlayer.onerror = (err) => {
-              console.error('[Deaflix] ❌ Video playback error:', err);
+              console.error('[Signify] ❌ Video playback error:', err);
               resolve();
             };
           });
@@ -793,11 +897,11 @@
           // Natural transition pause (movement epenthesis)
           await wait(150);
         } catch (playError) {
-          console.error('[Deaflix] ❌ Video play error:', playError);
+          console.error('[Signify] ❌ Video play error:', playError);
           throw playError;
         }
       } else {
-        console.warn('[Deaflix] ⚠️ Unknown media type:', mediaUrl);
+        console.warn('[Signify] ⚠️ Unknown media type:', mediaUrl);
         await wait(300);
       }
 
@@ -806,11 +910,13 @@
       if (videoQueue.length > 0) {
         playQueue();
       } else {
-        console.log('[Deaflix] Queue finished');
+        console.log('[Signify] Queue finished');
+        showCurrentWord(''); // Hide caption when queue finishes
       }
     } catch (error) {
-      console.error('[Deaflix] Error loading media:', error);
+      console.error('[Signify] Error loading media:', error);
       playing = false;
+      showCurrentWord(''); // Hide caption on error
       if (videoQueue.length > 0) {
         setTimeout(() => playQueue(), 200);
       }
