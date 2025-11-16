@@ -4,31 +4,31 @@
 
 ### 1. **Reload the Extension**
 1. Go to `chrome://extensions/`
-2. Find "Deaflix - ASL-First Education"
+2. Find "Signify - ASL-First Education"
 3. Click the **reload icon** (circular arrow) on the extension card
 4. Try clicking the extension icon again
 
 ### 2. **Check Extension is Enabled**
 1. Go to `chrome://extensions/`
-2. Make sure the toggle next to "Deaflix" is **ON** (blue)
+2. Make sure the toggle next to "Signify" is **ON** (blue)
 3. If it's off, turn it on
 
 ### 3. **Check Extension Icon is Visible**
 1. Look at the Chrome toolbar (top right)
-2. You should see the Deaflix icon (or puzzle piece if no icon)
+2. You should see the Signify icon (or puzzle piece if no icon)
 3. If you don't see it:
    - Click the puzzle piece icon (extensions menu)
-   - Find "Deaflix" and click the pin icon to pin it to toolbar
+   - Find "Signify" and click the pin icon to pin it to toolbar
 
 ### 4. **Check for Errors**
 1. Go to `chrome://extensions/`
-2. Find "Deaflix"
+2. Find "Signify"
 3. Click "Errors" or "Inspect views: service worker"
 4. Look for red error messages
 5. Share any errors you see
 
 ### 5. **Right-Click the Extension Icon**
-- Right-click the Deaflix icon in toolbar
+- Right-click the Signify icon in toolbar
 - Select "Inspect popup"
 - This opens DevTools for the popup
 - Check Console tab for errors
@@ -50,7 +50,7 @@ Make sure these files exist in `extension/` folder:
 
 ### 8. **Try Unloading and Reloading**
 1. Go to `chrome://extensions/`
-2. Click "Remove" on Deaflix
+2. Click "Remove" on Signify
 3. Click "Load unpacked" again
 4. Select the `extension/` folder
 5. Try clicking the icon
@@ -72,7 +72,7 @@ Make sure these files exist in `extension/` folder:
 ### Issue: No extension icon visible
 **Fix:**
 - Click puzzle piece icon (extensions menu)
-- Find Deaflix
+- Find Signify
 - Click pin icon to pin to toolbar
 
 ### Issue: Popup opens but is blank

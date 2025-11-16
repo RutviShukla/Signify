@@ -1,6 +1,6 @@
-# Deaflix Backend API
+# Signify Backend API
 
-Backend server for Deaflix Chrome Extension providing caption enhancement and ASL video services.
+Backend server for Signify Chrome Extension providing caption enhancement and ASL video services.
 
 ## Setup
 

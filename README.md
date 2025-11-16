@@ -1,4 +1,4 @@
-# Deaflix - ASL-First Accessibility Layer
+# Signify - ASL-First Accessibility Layer
 
 Chrome extension that enhances YouTube captions and provides ASL (American Sign Language) support through an intelligent overlay system.
 
@@ -13,7 +13,7 @@ Chrome extension that enhances YouTube captions and provides ASL (American Sign 
 ## Project Structure
 
 ```
-deaflix/
+signify/
 ├── extension/
 │   ├── manifest.json
 │   ├── popup.html
@@ -76,7 +76,7 @@ The server will run on `http://localhost:3000`
 ## Usage
 
 1. Navigate to a YouTube video with captions enabled
-2. Click the Deaflix extension icon
+2. Click the Signify extension icon
 3. Toggle "Enhanced Captions" to enable caption overlay
 4. Toggle "ASL Avatar" to show ASL video window
 5. Captions are automatically extracted and ASL videos play sequentially

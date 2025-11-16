@@ -1,4 +1,4 @@
-# Deaflix Demo Flow for Judges
+# Signify Demo Flow for Judges
 
 ## Pre-Demo Setup (5 minutes)
 
@@ -24,14 +24,14 @@
 ## Demo Script (3-5 minutes)
 
 ### 1. Introduction (30 seconds)
-- "Deaflix is an ASL-first education Chrome extension that makes educational videos more accessible for the Deaf and hard-of-hearing community."
+- "Signify is an ASL-first education Chrome extension that makes educational videos more accessible for the Deaf and hard-of-hearing community."
 
 ### 2. Show the Problem (30 seconds)
 - Point to existing captions: "Current captions are often poorly formatted, hard to read, and lack ASL support."
 - Show how captions can be cluttered with [music], (laughter), etc.
 
 ### 3. Enhanced Captions Feature (1 minute)
-- Click the Deaflix extension icon
+- Click the Signify extension icon
 - Toggle "Enhanced Captions" ON
 - **What to highlight:**
   - Clean, high-contrast caption overlay appears

@@ -110,7 +110,7 @@ curl https://your-app.railway.app/api/health
 
 Should return:
 ```json
-{"status":"ok","message":"Deaflix API is running"}
+{"status":"ok","message":"Signify API is running"}
 ```
 
 ### Test ASL Endpoint:

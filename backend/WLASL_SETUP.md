@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how to set up the WLASL (Word-Level American Sign Language) dataset for the Deaflix extension.
+This guide explains how to set up the WLASL (Word-Level American Sign Language) dataset for the Signify extension.
 
 ## Prerequisites
 

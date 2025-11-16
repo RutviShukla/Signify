@@ -4,20 +4,20 @@
 ## Quick Debugging Steps
 
 ### 1. Check Browser Console
-Open DevTools (F12) → Console tab. Look for `[Deaflix]` messages.
+Open DevTools (F12) → Console tab. Look for `[Signify]` messages.
 
 **What to look for:**
-- `[Deaflix] Creating ASL window...` - Window is being created
-- `[Deaflix] Found caption with selector: ...` - Captions are being detected
-- `[Deaflix] Fetching ASL video from backend...` - API call is being made
-- `[Deaflix] Backend response status: 200` - Backend is responding
-- `[Deaflix] Setting ASL video src to: ...` - Video URL is being set
+- `[Signify] Creating ASL window...` - Window is being created
+- `[Signify] Found caption with selector: ...` - Captions are being detected
+- `[Signify] Fetching ASL video from backend...` - API call is being made
+- `[Signify] Backend response status: 200` - Backend is responding
+- `[Signify] Setting ASL video src to: ...` - Video URL is being set
 
 ### 2. Check Backend is Running
 ```bash
 curl http://localhost:3000/api/health
 ```
-Should return: `{"status":"ok","message":"Deaflix API is running"}`
+Should return: `{"status":"ok","message":"Signify API is running"}`
 
 ### 3. Test ASL Endpoint Directly
 ```bash
@@ -73,7 +73,7 @@ In DevTools → Network tab:
 Open browser console on YouTube page and run:
 ```javascript
 // Test if ASL window exists
-document.getElementById('deaflix-asl-window')
+document.getElementById('signify-asl-window')
 
 // Test if captions are detected
 document.querySelectorAll('.ytp-caption-segment')
@@ -85,7 +85,7 @@ document.querySelectorAll('.ytp-caption-segment')
 ### 7. Verify Extension is Loaded
 
 1. Go to `chrome://extensions/`
-2. Find "Deaflix - ASL-First Education"
+2. Find "Signify - ASL-First Education"
 3. Click "Inspect views: service worker" (if available)
 4. Check for errors
 

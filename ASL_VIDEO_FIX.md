@@ -60,10 +60,10 @@ The extension was playing **random irrelevant videos** (BigBuckBunny, ElephantsD
 
 ### Check Console (F12):
 Look for these messages:
-- `[Deaflix] Found caption with selector: ...` - Captions detected
-- `[Deaflix] Extracted words for OpenASL lookup: ...` - Words extracted
-- `[Deaflix] Videos found: 0` - No videos (expected if no dataset)
-- `[Deaflix] No ASL videos found for caption` - Shows message
+- `[Signify] Found caption with selector: ...` - Captions detected
+- `[Signify] Extracted words for OpenASL lookup: ...` - Words extracted
+- `[Signify] Videos found: 0` - No videos (expected if no dataset)
+- `[Signify] No ASL videos found for caption` - Shows message
 
 ### Check Backend Console:
 - `[Backend] Looking up OpenASL videos for: "..."` - Request received

@@ -6,15 +6,15 @@
 Open the browser console and look for these logs:
 
 **Good signs:**
-- `[Deaflix] New caption: ...` - Captions are being detected
-- `[Deaflix] Extracted words: [...]` - Words are being extracted
-- `[Deaflix] ✅ Queued X videos` - Videos found and queued
-- `[Deaflix] ✅ Video playing successfully` - Videos are playing
+- `[Signify] New caption: ...` - Captions are being detected
+- `[Signify] Extracted words: [...]` - Words are being extracted
+- `[Signify] ✅ Queued X videos` - Videos found and queued
+- `[Signify] ✅ Video playing successfully` - Videos are playing
 
 **Problems:**
-- `[Deaflix] ⚠️ No ASL videos found for words` - Words don't match mapping
-- `[Deaflix] ❌ Invalid response from backend` - Backend connection issue
-- `[Deaflix] Proxy error` - Backend not running
+- `[Signify] ⚠️ No ASL videos found for words` - Words don't match mapping
+- `[Signify] ❌ Invalid response from backend` - Backend connection issue
+- `[Signify] Proxy error` - Backend not running
 
 ### 2. Check Backend Console
 Look at your backend terminal for:

@@ -1,9 +1,9 @@
-# How Deaflix Works - Technical Explanation
+# How Signify Works - Technical Explanation
 
 
 ## Overview
 
-Deaflix extracts captions from videos in **real-time** and matches them to ASL videos. Here's how it works:
+Signify extracts captions from videos in **real-time** and matches them to ASL videos. Here's how it works:
 
 ## Caption Extraction Flow
 

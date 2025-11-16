@@ -1,4 +1,4 @@
-# Deaflix Setup Instructions
+# Signify Setup Instructions
 
 ## Quick Start
 
@@ -39,7 +39,7 @@ The server will run on `http://localhost:3000`
 ### 3. Test the Extension
 
 1. Open a YouTube video with captions enabled
-2. Click the Deaflix extension icon
+2. Click the Signify extension icon
 3. Toggle "Enhanced Captions" ON
 4. Toggle "ASL Window" ON
 5. Play the video and observe the enhanced captions and ASL window
@@ -77,7 +77,7 @@ npm run dev  # Uses nodemon for auto-restart
 
 For Chrome extension development:
 - After making changes, go to `chrome://extensions/`
-- Click the refresh icon on the Deaflix extension card
+- Click the refresh icon on the Signify extension card
 
 ## Next Steps
 

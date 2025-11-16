@@ -1,4 +1,4 @@
-# Signify (Deaflix) - Complete Architecture Overview
+# Signify - Complete Architecture Overview
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -17,7 +17,7 @@
 
 ## Project Overview
 
-**Signify** (formerly Deaflix) is an ASL-first education Chrome extension that enhances video accessibility for the Deaf and hard-of-hearing community. The extension extracts captions from educational video platforms, enhances them using AI, and displays them alongside real-time ASL sign language interpretation.
+**Signify** is an ASL-first education Chrome extension that enhances video accessibility for the Deaf and hard-of-hearing community. The extension extracts captions from educational video platforms, enhances them using AI, and displays them alongside real-time ASL sign language interpretation.
 
 ### Core Mission
 Make educational video content accessible through:
@@ -206,7 +206,7 @@ Make educational video content accessible through:
 **1. Health Check**
 ```
 GET /api/health
-Response: { status: 'ok', message: 'Deaflix API is running' }
+Response: { status: 'ok', message: 'Signify API is running' }
 ```
 
 **2. Caption Enhancement**
@@ -905,7 +905,7 @@ Health check endpoint.
 ```json
 {
   "status": "ok",
-  "message": "Deaflix API is running"
+  "message": "Signify API is running"
 }
 ```
 

@@ -1,4 +1,4 @@
-# Deaflix Project Structure
+# Signify Project Structure
 
 ## Complete File Tree
 
