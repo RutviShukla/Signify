@@ -5,6 +5,7 @@
   // Global state
   let aslEnabled = false;
   let captionEnabled = true; // Default to true
+  let backendUrl = 'http://localhost:3000'; // Default backend URL
   let lastCaption = '';
   let videoQueue = []; // Array of {url, word, gloss} objects
   let playing = false;
@@ -21,9 +22,10 @@
   // Initialize
   const init = async () => {
     // Load settings
-    const result = await chrome.storage.sync.get(['aslEnabled', 'captionEnabled']);
+    const result = await chrome.storage.sync.get(['aslEnabled', 'captionEnabled', 'backendUrl']);
     aslEnabled = result.aslEnabled || false;
     captionEnabled = result.captionEnabled !== undefined ? result.captionEnabled : true; // Default to true
+    backendUrl = result.backendUrl || 'http://localhost:3000'; // Default to localhost, can be overridden
 
     // Wait for video element
     waitForVideo();
@@ -110,6 +112,11 @@
         }
       }
       sendResponse({ success: true });
+    } else if (message.type === 'updateBackendUrl') {
+      backendUrl = message.url || 'http://localhost:3000';
+      chrome.storage.sync.set({ backendUrl: backendUrl });
+      console.log(`[Signify] Backend URL updated to: ${backendUrl}`);
+      sendResponse({ success: true, backendUrl: backendUrl });
     }
     return true;
   };
@@ -540,16 +547,18 @@
     videoQueue = [];
 
     // Request ASL videos from backend via proxy
+    // Use configurable backend URL
+    const apiUrl = `${backendUrl}/api/asl/video-map`;
     try {
       chrome.runtime.sendMessage({
         type: 'proxyRequest',
-        url: 'http://localhost:3000/api/asl/video-map',
+        url: apiUrl,
         method: 'POST',
         body: { words: words }
       }, (response) => {
         if (chrome.runtime.lastError) {
           console.error('[Signify] Proxy error:', chrome.runtime.lastError);
-          console.error('[Signify] Make sure backend is running on http://localhost:3000');
+          console.error(`[Signify] Make sure backend is running on ${backendUrl}`);
           return;
         }
 
