@@ -28,3 +28,12 @@ build/
 extension/*.crx
 extension/*.pem
 
+# ASL Video Datasets (too large for Git)
+backend/data/asl_dataset/
+backend/data/wasl-dataset/
+backend/data/WLASL_videos/
+*.mp4
+*.avi
+*.mov
+*.webm
+

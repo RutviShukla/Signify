@@ -13,6 +13,7 @@
   let captionObserver = null;
   let videoElement = null;
   let aslPlayer = null;
+  let aslImage = null;
   let preloader = null;
   let preloadedUrl = null;
   let preloadedDataUrl = null;
@@ -81,6 +82,7 @@
           aslWindow.remove();
           aslWindow = null;
           aslPlayer = null;
+          aslImage = null;
         }
         if (preloader) {
           preloader.remove();
@@ -143,6 +145,7 @@
       justify-content: center;
     `;
 
+    // Create video element for videos
     aslPlayer = document.createElement('video');
     aslPlayer.id = 'aslPlayer';
     aslPlayer.autoplay = true;
@@ -154,12 +157,25 @@
       height: 100%;
       object-fit: cover;
       transition: opacity 0.2s ease-in-out;
+      display: none;
+    `;
+
+    // Create image element for letter images (JPEG)
+    aslImage = document.createElement('img');
+    aslImage.id = 'aslImage';
+    aslImage.style.cssText = `
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 0.2s ease-in-out;
+      display: none;
     `;
 
     aslWindow.appendChild(aslPlayer);
+    aslWindow.appendChild(aslImage);
     document.body.appendChild(aslWindow);
     
-    console.log('[Deaflix] ASL avatar window created');
+    console.log('[Deaflix] ASL avatar window created (supports videos and images)');
   };
 
   // Start caption observer
@@ -227,6 +243,11 @@
 
     // Load ASL sequence
     if (aslEnabled) {
+      // Ensure ASL window exists
+      if (!aslWindow) {
+        console.log('[Deaflix] Creating ASL window for caption processing');
+        createASLWindow();
+      }
       loadASLSequence(text);
     }
   };
@@ -261,18 +282,50 @@
       }, (response) => {
         if (chrome.runtime.lastError) {
           console.error('[Deaflix] Proxy error:', chrome.runtime.lastError);
+          console.error('[Deaflix] Make sure backend is running on http://localhost:3000');
           return;
         }
 
+        console.log('[Deaflix] Backend response:', response);
+
         if (response && response.success && response.data) {
           const data = response.data;
-          if (data.success && data.videos && data.videos.length > 0) {
+          console.log('[Deaflix] Backend data:', data);
+          
+          // Handle sequence format (WLASL videos only)
+          if (data.success && data.sequence && Array.isArray(data.sequence) && data.sequence.length > 0) {
+            // Stop any currently playing sequence BEFORE setting new queue
+            stopASLSequence();
+            
+            // Extract video URLs from sequence
+            videoQueue = data.sequence.map(item => item.url);
+            console.log('[Deaflix] ✅ Queued', videoQueue.length, 'WLASL videos');
+            console.log('[Deaflix] Video URLs:', videoQueue);
+            console.log('[Deaflix] Found words:', data.foundWords || []);
+            if (data.notFoundWords && data.notFoundWords.length > 0) {
+              console.log('[Deaflix] Words not in dataset (skipped):', data.notFoundWords);
+            }
+            
+            // Start playing the queue
+            playQueue();
+          } else if (data.success && data.videos && Array.isArray(data.videos) && data.videos.length > 0) {
+            // Fallback to videos array format
             videoQueue = data.videos;
-            console.log('[Deaflix] Queued videos:', videoQueue.length);
+            console.log('[Deaflix] ✅ Queued', videoQueue.length, 'videos:', videoQueue);
             playQueue();
           } else {
-            console.log('[Deaflix] No ASL videos found for words');
+            console.warn('[Deaflix] ⚠️ No WLASL videos found for words:', words);
+            console.warn('[Deaflix] Backend found', data.wordsFound || 0, 'out of', data.wordsTotal || words.length, 'words');
+            if (data.availableWords) {
+              console.warn('[Deaflix] Available words in WLASL dataset:', data.availableWords.slice(0, 20), '...');
+            }
+            if (data.notFoundWords && data.notFoundWords.length > 0) {
+              console.warn('[Deaflix] Words not in dataset:', data.notFoundWords);
+            }
+            console.warn('[Deaflix] Tip: Add more words to WLASL dataset or run setup scripts');
           }
+        } else {
+          console.error('[Deaflix] ❌ Invalid response from backend:', response);
         }
       });
     } catch (error) {
@@ -284,15 +337,41 @@
   const extractWords = (text) => {
     if (!text) return [];
     
-    return text.toLowerCase()
-      .replace(/[^\w\s]/g, ' ')
+    // Normalize text: lowercase, remove punctuation, handle contractions
+    const normalized = text.toLowerCase()
+      .replace(/[^\w\s']/g, ' ')  // Keep apostrophes for contractions
+      .replace(/'/g, '')          // Remove apostrophes after keeping them
+      .trim();
+    
+    const words = normalized
       .split(/\s+/)
       .filter(w => w.length > 0);
+    
+    console.log('[Deaflix] Extracted words from:', text);
+    console.log('[Deaflix] Normalized words:', words);
+    
+    return words;
   };
 
   // Wait helper function for delays
   const wait = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
+  };
+
+  // Check if URL is an image
+  const isImageUrl = (url) => {
+    if (!url) return false;
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const lowerUrl = url.toLowerCase();
+    return imageExtensions.some(ext => lowerUrl.includes(ext));
+  };
+
+  // Check if URL is a video
+  const isVideoUrl = (url) => {
+    if (!url) return false;
+    const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv'];
+    const lowerUrl = url.toLowerCase();
+    return videoExtensions.some(ext => lowerUrl.includes(ext));
   };
 
   // Preload next clip (fetch data URL in background)
@@ -348,20 +427,57 @@
     }
   };
 
+  // Stop current ASL sequence
+  const stopASLSequence = () => {
+    playing = false;
+    videoQueue = [];
+    if (aslPlayer) {
+      aslPlayer.pause();
+      aslPlayer.src = '';
+      aslPlayer.style.opacity = '0';
+    }
+    if (aslImage) {
+      aslImage.src = '';
+      aslImage.style.opacity = '0';
+    }
+    preloadedUrl = null;
+    preloadedDataUrl = null;
+    console.log('[Deaflix] Stopped ASL sequence');
+  };
+
   // Play video queue with smooth transitions
   const playQueue = async () => {
+    console.log('[Deaflix] playQueue() called - playing:', playing, 'queue length:', videoQueue.length);
+    
     if (playing || videoQueue.length === 0) {
+      console.log('[Deaflix] playQueue() returning early - playing:', playing, 'queue empty:', videoQueue.length === 0);
       return;
     }
 
-    if (!aslWindow || !aslPlayer) {
-      console.error('[Deaflix] ASL window or player not found');
+    if (!aslWindow || !aslPlayer || !aslImage) {
+      console.error('[Deaflix] ASL window or media elements not found', {
+        aslWindow: !!aslWindow,
+        aslPlayer: !!aslPlayer,
+        aslImage: !!aslImage
+      });
+      // Try to create ASL window if it doesn't exist
+      if (!aslWindow && aslEnabled) {
+        console.log('[Deaflix] Creating ASL window...');
+        createASLWindow();
+        // Retry after a short delay
+        setTimeout(() => playQueue(), 100);
+      }
       return;
     }
 
     playing = true;
-    const videoUrl = videoQueue.shift();
-    console.log('[Deaflix] Playing video:', videoUrl, `(${videoQueue.length} remaining)`);
+    const mediaUrl = videoQueue.shift();
+    const isImage = isImageUrl(mediaUrl);
+    const isVideo = isVideoUrl(mediaUrl);
+    const mediaType = isImage ? 'image' : (isVideo ? 'video' : 'unknown');
+    
+    console.log(`[Deaflix] 🎬 Playing ${mediaType}:`, mediaUrl);
+    console.log('[Deaflix] Queue status:', videoQueue.length, 'remaining');
 
     // Preload next clip if available
     if (videoQueue.length > 0) {
@@ -374,7 +490,7 @@
     try {
       // Get video data URL via proxy (use preloaded if available)
       let dataUrl;
-      if (preloadedUrl === videoUrl && preloadedDataUrl) {
+      if (preloadedUrl === mediaUrl && preloadedDataUrl) {
         // Reuse preloaded data URL
         dataUrl = preloadedDataUrl;
         preloadedUrl = null;
@@ -385,7 +501,7 @@
         dataUrl = await new Promise((resolve, reject) => {
           chrome.runtime.sendMessage({
             type: 'proxyMedia',
-            url: videoUrl
+            url: mediaUrl
           }, (result) => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message));
@@ -400,72 +516,109 @@
         });
       }
 
-      // Fade out current video
+      // Hide both elements first
+      aslPlayer.style.display = 'none';
+      aslImage.style.display = 'none';
       aslPlayer.style.opacity = '0';
+      aslImage.style.opacity = '0';
 
       // Wait for fade out transition
       await wait(150);
 
-      // Swap video source
-      aslPlayer.src = dataUrl;
-      aslPlayer.load();
-
-      // Wait for video to load
-      await new Promise((resolve, reject) => {
-        aslPlayer.onloadeddata = () => {
-          resolve();
-        };
-        aslPlayer.onerror = (err) => {
-          reject(err);
-        };
+      if (isImage) {
+        // Handle image (letter signs)
+        aslImage.src = dataUrl;
+        aslImage.style.display = 'block';
         
-        // Timeout after 5 seconds
-        setTimeout(() => {
-          if (aslPlayer.readyState < 2) {
-            reject(new Error('Video load timeout'));
-          }
-        }, 5000);
-      });
-
-      // Play video
-      try {
-        await aslPlayer.play();
-        console.log('[Deaflix] Video playing');
-        
-        // Fade in
-        aslPlayer.style.opacity = '1';
-
-        // Wait for video to end
-        await new Promise((resolve) => {
-          aslPlayer.onended = () => {
-            console.log('[Deaflix] Video ended');
+        // Wait for image to load
+        await new Promise((resolve, reject) => {
+          aslImage.onload = () => {
             resolve();
           };
-          aslPlayer.onerror = () => {
-            console.error('[Deaflix] Video error');
-            resolve();
+          aslImage.onerror = (err) => {
+            reject(new Error('Image load failed'));
           };
+          
+          // Timeout after 3 seconds
+          setTimeout(() => {
+            if (!aslImage.complete) {
+              reject(new Error('Image load timeout'));
+            }
+          }, 3000);
         });
 
-        // Natural transition pause (movement epenthesis)
-        await wait(150);
+        // Fade in image
+        aslImage.style.opacity = '1';
+        console.log('[Deaflix] ✅ Image displayed successfully');
 
-        // Play next clip
-        playing = false;
-        if (videoQueue.length > 0) {
-          playQueue();
-        } else {
-          console.log('[Deaflix] Queue finished');
+        // Show image for 500ms (letter signs are quick)
+        await wait(500);
+
+        // Natural transition pause
+        await wait(150);
+      } else if (isVideo) {
+        // Handle video (word signs)
+        aslPlayer.src = dataUrl;
+        aslPlayer.style.display = 'block';
+        aslPlayer.load();
+
+        // Wait for video to load
+        await new Promise((resolve, reject) => {
+          aslPlayer.onloadeddata = () => {
+            resolve();
+          };
+          aslPlayer.onerror = (err) => {
+            reject(new Error('Video load failed'));
+          };
+          
+          // Timeout after 5 seconds
+          setTimeout(() => {
+            if (aslPlayer.readyState < 2) {
+              reject(new Error('Video load timeout'));
+            }
+          }, 5000);
+        });
+
+        // Play video
+        try {
+          await aslPlayer.play();
+          console.log('[Deaflix] ✅ Video playing successfully');
+          
+          // Fade in
+          aslPlayer.style.opacity = '1';
+
+          // Wait for video to end
+          await new Promise((resolve) => {
+            aslPlayer.onended = () => {
+              console.log('[Deaflix] ✅ Video ended successfully');
+              resolve();
+            };
+            aslPlayer.onerror = (err) => {
+              console.error('[Deaflix] ❌ Video playback error:', err);
+              resolve();
+            };
+          });
+
+          // Natural transition pause (movement epenthesis)
+          await wait(150);
+        } catch (playError) {
+          console.error('[Deaflix] ❌ Video play error:', playError);
+          throw playError;
         }
-      } catch (playError) {
-        console.error('[Deaflix] Play error:', playError);
-        playing = false;
-        if (videoQueue.length > 0) {
-          setTimeout(() => playQueue(), 200);
-        }
+      } else {
+        console.warn('[Deaflix] ⚠️ Unknown media type:', mediaUrl);
+        await wait(300);
+      }
+
+      // Play next clip
+      playing = false;
+      if (videoQueue.length > 0) {
+        playQueue();
+      } else {
+        console.log('[Deaflix] Queue finished');
       }
     } catch (error) {
-      console.error('[Deaflix] Error loading video:', error);
+      console.error('[Deaflix] Error loading media:', error);
       playing = false;
       if (videoQueue.length > 0) {
         setTimeout(() => playQueue(), 200);
