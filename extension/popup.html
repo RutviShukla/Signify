@@ -9,33 +9,46 @@
 <body>
   <div class="container">
     <header>
-      <h1>🎬 Signify</h1>
-      <p class="subtitle">ASL-First Accessibility</p>
+      <div class="logo">
+        <span class="logo-icon">🤟</span>
+        <h1>Signify</h1>
+      </div>
+      <p class="subtitle">Accessible ASL Translation</p>
     </header>
 
     <div class="controls">
       <div class="control-item">
-        <label class="toggle-switch">
-          <input type="checkbox" id="aslToggle">
-          <span class="slider"></span>
-        </label>
-        <div class="control-label">
-          <strong>ASL Avatar</strong>
-          <span class="control-desc">Sign language support</span>
+        <div class="control-content">
+          <label class="toggle-switch">
+            <input type="checkbox" id="aslToggle">
+            <span class="slider"></span>
+          </label>
+          <div class="control-label">
+            <h3>Sign Language Avatar</h3>
+            <p>Real-time ASL interpretation with visual gestures</p>
+          </div>
         </div>
+        <div class="control-icon">🎯</div>
       </div>
 
       <div class="control-item">
-        <label class="toggle-switch">
-          <input type="checkbox" id="captionToggle">
-          <span class="slider"></span>
-        </label>
-        <div class="control-label">
-          <strong>Word Captions</strong>
-          <span class="control-desc">Show current word being signed</span>
+        <div class="control-content">
+          <label class="toggle-switch">
+            <input type="checkbox" id="captionToggle">
+            <span class="slider"></span>
+          </label>
+          <div class="control-label">
+            <h3>Text Captions</h3>
+            <p>Display spoken words as subtitles</p>
+          </div>
         </div>
+        <div class="control-icon">📝</div>
       </div>
     </div>
+
+    <footer>
+      <p>Making videos accessible to everyone</p>
+    </footer>
   </div>
 
   <script src="popup.js"></script>
