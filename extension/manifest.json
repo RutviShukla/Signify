@@ -5,8 +5,7 @@
   "description": "ASL-First Accessibility Layer for YouTube",
   "permissions": [
     "activeTab",
-    "storage",
-    "scripting"
+    "storage"
   ],
   "host_permissions": [
     "https://www.youtube.com/*",
