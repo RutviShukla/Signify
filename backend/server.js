@@ -228,16 +228,24 @@ app.post('/api/asl/video-map', (req, res) => {
     }
 
     // Get base URL from request (works for both localhost and Railway)
-    // Railway uses reverse proxy, so check X-Forwarded-Proto header
-    const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
-    const host = req.get('x-forwarded-host') || req.get('host') || `localhost:${PORT}`;
+    // Railway sets Host to localhost:8080 internally, so detect and use Railway domain
+    let baseUrl;
+    const host = req.get('host') || `localhost:${PORT}`;
     
-    // Force HTTPS for Railway (Railway always uses HTTPS for public domains)
-    const finalProtocol = host.includes('railway.app') ? 'https' : protocol;
-    const baseUrl = `${finalProtocol}://${host}`;
+    // If host is localhost:8080, we're on Railway - use Railway domain
+    if (host.includes('localhost:8080') || process.env.RAILWAY_ENVIRONMENT) {
+      baseUrl = 'https://signify-production.up.railway.app';
+    } else if (host.includes('localhost:3000')) {
+      // Local development
+      baseUrl = `http://localhost:${PORT}`;
+    } else {
+      // Use request headers (for other deployments)
+      const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
+      baseUrl = `${protocol}://${host}`;
+    }
     
     // Debug logging
-    console.log(`[Backend] Request headers - protocol: ${req.protocol}, x-forwarded-proto: ${req.get('x-forwarded-proto')}, host: ${req.get('host')}, x-forwarded-host: ${req.get('x-forwarded-host')}`);
+    console.log(`[Backend] Host: ${host}, RAILWAY_ENVIRONMENT: ${process.env.RAILWAY_ENVIRONMENT}`);
     console.log(`[Backend] Using baseUrl: ${baseUrl}`);
 
     const sequence = [];
