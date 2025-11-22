@@ -228,24 +228,25 @@ app.post('/api/asl/video-map', (req, res) => {
     }
 
     // Get base URL from request (works for both localhost and Railway)
-    // Railway sets Host to localhost:8080 internally, so detect and use Railway domain
+    // Railway sets PORT to a different value and Host to localhost:8080 internally
     let baseUrl;
     const host = req.get('host') || `localhost:${PORT}`;
+    const isRailway = PORT !== 3000 || 
+                      host.includes('localhost:8080') || 
+                      process.env.RAILWAY_ENVIRONMENT ||
+                      process.env.RAILWAY_PUBLIC_DOMAIN;
     
-    // If host is localhost:8080, we're on Railway - use Railway domain
-    if (host.includes('localhost:8080') || process.env.RAILWAY_ENVIRONMENT) {
+    if (isRailway) {
+      // We're on Railway - use Railway domain
       baseUrl = 'https://signify-production.up.railway.app';
-    } else if (host.includes('localhost:3000')) {
+    } else {
       // Local development
       baseUrl = `http://localhost:${PORT}`;
-    } else {
-      // Use request headers (for other deployments)
-      const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
-      baseUrl = `${protocol}://${host}`;
     }
     
     // Debug logging
-    console.log(`[Backend] Host: ${host}, RAILWAY_ENVIRONMENT: ${process.env.RAILWAY_ENVIRONMENT}`);
+    console.log(`[Backend] PORT: ${PORT}, Host: ${host}, isRailway: ${isRailway}`);
+    console.log(`[Backend] RAILWAY_ENVIRONMENT: ${process.env.RAILWAY_ENVIRONMENT}`);
     console.log(`[Backend] Using baseUrl: ${baseUrl}`);
 
     const sequence = [];
