@@ -9,8 +9,11 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://*/*",
-    "http://localhost/*"
+    "https://www.youtube.com/*",
+    "https://youtube.com/*",
+    "https://*.youtube.com/*",
+    "https://signify-production.up.railway.app/*",
+    "http://localhost:3000/*"
   ],
   "action": {
     "default_popup": "popup.html"
