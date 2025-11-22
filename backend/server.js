@@ -227,6 +227,12 @@ app.post('/api/asl/video-map', (req, res) => {
       });
     }
 
+    // Get base URL from request (works for both localhost and Railway)
+    // Railway uses reverse proxy, so check X-Forwarded-Proto header
+    const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
+    const host = req.get('x-forwarded-host') || req.get('host') || `localhost:${PORT}`;
+    const baseUrl = `${protocol}://${host}`;
+
     const sequence = [];
     const foundWords = [];
     const notFoundWords = [];
@@ -254,10 +260,10 @@ app.post('/api/asl/video-map', (req, res) => {
         let videoUrl;
         if (videoFile.includes('/')) {
           // Already has path (old format): "how/how.mp4" → /asl/how/how.mp4
-          videoUrl = `http://localhost:${PORT}/asl/${videoFile}`;
+          videoUrl = `${baseUrl}/asl/${videoFile}`;
         } else {
           // Just filename (new format): "02001.mp4" → /asl/how/02001.mp4
-          videoUrl = `http://localhost:${PORT}/asl/${gloss}/${videoFile}`;
+          videoUrl = `${baseUrl}/asl/${gloss}/${videoFile}`;
         }
         
         sequence.push({
