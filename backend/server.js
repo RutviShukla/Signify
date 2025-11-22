@@ -231,7 +231,14 @@ app.post('/api/asl/video-map', (req, res) => {
     // Railway uses reverse proxy, so check X-Forwarded-Proto header
     const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
     const host = req.get('x-forwarded-host') || req.get('host') || `localhost:${PORT}`;
-    const baseUrl = `${protocol}://${host}`;
+    
+    // Force HTTPS for Railway (Railway always uses HTTPS for public domains)
+    const finalProtocol = host.includes('railway.app') ? 'https' : protocol;
+    const baseUrl = `${finalProtocol}://${host}`;
+    
+    // Debug logging
+    console.log(`[Backend] Request headers - protocol: ${req.protocol}, x-forwarded-proto: ${req.get('x-forwarded-proto')}, host: ${req.get('host')}, x-forwarded-host: ${req.get('x-forwarded-host')}`);
+    console.log(`[Backend] Using baseUrl: ${baseUrl}`);
 
     const sequence = [];
     const foundWords = [];
