@@ -6,7 +6,7 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.set({
     captionsEnabled: false,
     aslEnabled: false,
-    backendUrl: 'http://localhost:3000'
+    backendUrl: 'https://signify-production.up.railway.app'
   });
 });
 

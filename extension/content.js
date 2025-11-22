@@ -5,7 +5,7 @@
   // Global state
   let aslEnabled = false;
   let captionEnabled = true; // Default to true
-  let backendUrl = 'http://localhost:3000'; // Default backend URL
+  let backendUrl = 'https://signify-production.up.railway.app'; // Default to Railway (production)
   let lastCaption = '';
   let videoQueue = []; // Array of {url, word, gloss} objects
   let playing = false;
@@ -32,7 +32,7 @@
     const result = await chrome.storage.sync.get(['aslEnabled', 'captionEnabled', 'backendUrl', 'aslWidgetBg', 'captionBg', 'accentColor']);
     aslEnabled = result.aslEnabled || false;
     captionEnabled = result.captionEnabled !== undefined ? result.captionEnabled : true; // Default to true
-    backendUrl = result.backendUrl || 'http://localhost:3000'; // Default to localhost, can be overridden
+    backendUrl = result.backendUrl || 'https://signify-production.up.railway.app'; // Default to Railway (production)
 
     // Load customization settings
     customization.aslWidgetBg = result.aslWidgetBg || 'default';
@@ -125,7 +125,7 @@
       }
       sendResponse({ success: true });
     } else if (message.type === 'updateBackendUrl') {
-      backendUrl = message.url || 'http://localhost:3000';
+      backendUrl = message.url || 'https://signify-production.up.railway.app';
       chrome.storage.sync.set({ backendUrl: backendUrl });
       console.log(`[Signify] Backend URL updated to: ${backendUrl}`);
       sendResponse({ success: true, backendUrl: backendUrl });
